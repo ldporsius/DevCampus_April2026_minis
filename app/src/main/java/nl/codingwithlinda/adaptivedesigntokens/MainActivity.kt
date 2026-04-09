@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.AdaptiveDesignTokensTheme
+import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.ProfileRoot
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -12,7 +13,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AdaptiveDesignTokensTheme {
-                // ProfileScreen goes here once wired to a ViewModel
+                ProfileRoot()
             }
         }
     }

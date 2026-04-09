@@ -3,6 +3,8 @@ package nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.UiMode
 
 private val LightColorScheme = lightColorScheme(
     // Primary
@@ -48,9 +50,11 @@ private val LightColorScheme = lightColorScheme(
 fun AdaptiveDesignTokensTheme(
     content: @Composable () -> Unit
 ) {
+
     MaterialTheme(
         colorScheme = LightColorScheme,
         typography = Typography,
         content = content
     )
+
 }

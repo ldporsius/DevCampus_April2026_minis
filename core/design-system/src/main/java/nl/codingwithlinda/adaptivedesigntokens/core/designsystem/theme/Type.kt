@@ -61,22 +61,22 @@ val Typography = Typography(
     titleLarge = TextStyle(
         fontFamily = HostGroteskFontFamily,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
+        fontSize = 28.sp,
+        lineHeight = 36.sp,
         letterSpacing = 0.sp
     ),
     titleMedium = TextStyle(
         fontFamily = HostGroteskFontFamily,
         fontWeight = FontWeight.Medium,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
+        fontSize = 26.sp,
+        lineHeight = 32.sp,
         letterSpacing = 0.15.sp
     ),
     titleSmall = TextStyle(
         fontFamily = HostGroteskFontFamily,
         fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 20.sp,
+        fontSize = 24.sp,
+        lineHeight = 28.sp,
         letterSpacing = 0.1.sp
     ),
     bodyLarge = TextStyle(
