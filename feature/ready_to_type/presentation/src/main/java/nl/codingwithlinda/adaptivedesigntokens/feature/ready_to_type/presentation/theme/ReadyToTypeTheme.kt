@@ -2,13 +2,13 @@ package nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentati
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-private val ReadyToTypeColorScheme = lightColorScheme(
+private val ReadyToTypeColorScheme = darkColorScheme(
     primary = RttPrimary,
     onPrimary = RttOnPrimary,
     primaryContainer = RttPrimaryContainer,
