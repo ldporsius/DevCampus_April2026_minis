@@ -1,4 +1,4 @@
-package nl.codingwithlinda.adaptivedesigntokens.design_system.ui.theme
+package nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import nl.codingwithlinda.adaptivedesigntokens.R
+import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.R
 
 val HostGroteskFontFamily = FontFamily(
     Font(R.font.host_grotesk_regular, FontWeight.Normal),

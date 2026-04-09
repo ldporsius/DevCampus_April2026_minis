@@ -1,4 +1,4 @@
-package nl.codingwithlinda.adaptivedesigntokens.design_system.ui.theme
+package nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme

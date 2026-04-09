@@ -24,4 +24,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "AdaptiveDesignTokens"
 include(":app")
+include(":core:design-system")
+include(":feature:profile:domain")
+include(":feature:profile:data")
+include(":feature:profile:presentation")
  
