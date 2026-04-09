@@ -24,6 +24,7 @@ class ReadyToTypeViewModel(
             pin2 = savedStateHandle["pin2"],
             pin3 = savedStateHandle["pin3"],
             pin4 = savedStateHandle["pin4"],
+            activeCell = savedStateHandle["activeCell"] ?: 0,
         )
     )
     val state = _state.asStateFlow()
@@ -34,22 +35,36 @@ class ReadyToTypeViewModel(
         when (action) {
             is ReadyToTypeAction.OnPinDigitEntered -> {
                 resetStatusJob?.cancel()
-                val digit = action.digit
-                val key = "pin${action.position}"
-                savedStateHandle[key] = digit
+                val cell = _state.value.activeCell
+                val next = (cell + 1).coerceAtMost(3)
+                savedStateHandle["pin${cell + 1}"] = action.digit
+                savedStateHandle["activeCell"] = next
                 _state.update {
-                    when (action.position) {
-                        1 -> it.copy(pin1 = digit, pinStatus = PinStatus.Idle)
-                        2 -> it.copy(pin2 = digit, pinStatus = PinStatus.Idle)
-                        3 -> it.copy(pin3 = digit, pinStatus = PinStatus.Idle)
-                        4 -> it.copy(pin4 = digit, pinStatus = PinStatus.Idle)
-                        else -> it
-                    }
+                    it.withPinAt(cell, action.digit)
+                        .copy(activeCell = next, pinStatus = PinStatus.Idle)
                 }
+            }
+            ReadyToTypeAction.OnDeletePress -> {
+                resetStatusJob?.cancel()
+                val cell = _state.value.activeCell
+                val digit = _state.value.pinAt(cell)
+                if (digit != null) {
+                    savedStateHandle["pin${cell + 1}"] = null
+                    _state.update { it.withPinAt(cell, null).copy(pinStatus = PinStatus.Idle) }
+                } else {
+                    val prev = (cell - 1).coerceAtLeast(0)
+                    savedStateHandle["activeCell"] = prev
+                    _state.update { it.copy(activeCell = prev) }
+                }
+            }
+            is ReadyToTypeAction.OnCellClicked -> {
+                savedStateHandle["activeCell"] = action.index
+                _state.update { it.copy(activeCell = action.index) }
             }
             ReadyToTypeAction.OnClearPin -> {
                 resetStatusJob?.cancel()
                 listOf("pin1", "pin2", "pin3", "pin4").forEach { savedStateHandle[it] = null }
+                savedStateHandle["activeCell"] = 0
                 _state.update { ReadyToTypeState() }
             }
             ReadyToTypeAction.OnConfirmPin -> {
@@ -70,6 +85,7 @@ class ReadyToTypeViewModel(
         resetStatusJob = viewModelScope.launch {
             delay(PIN_STATUS_RESET_DELAY)
             listOf("pin1", "pin2", "pin3", "pin4").forEach { savedStateHandle[it] = null }
+            savedStateHandle["activeCell"] = 0
             _state.update { ReadyToTypeState() }
         }
     }

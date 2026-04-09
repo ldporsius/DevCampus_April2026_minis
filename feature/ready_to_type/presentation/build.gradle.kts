@@ -22,6 +22,7 @@ android {
 }
 
 dependencies {
+    testImplementation(libs.junit)
     implementation(project(":feature:ready_to_type:domain"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)

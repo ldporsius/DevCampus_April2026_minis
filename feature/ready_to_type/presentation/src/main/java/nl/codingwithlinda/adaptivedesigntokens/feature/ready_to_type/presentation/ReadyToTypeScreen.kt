@@ -1,6 +1,7 @@
 package nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,10 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,14 +22,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -66,11 +60,11 @@ fun ReadyToTypeScreen(
     modifier: Modifier = Modifier,
 ) {
     val focusRequesters = remember { List(4) { FocusRequester() } }
-    val pins = listOf(state.pin1, state.pin2, state.pin3, state.pin4)
 
-    LaunchedEffect(true) {
-        focusRequesters[0].requestFocus()
+    LaunchedEffect(state.activeCell) {
+        focusRequesters[state.activeCell].requestFocus()
     }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -95,30 +89,17 @@ fun ReadyToTypeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-
             Spacer(modifier = Modifier.height(32.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                pins.forEachIndexed { index, digit ->
+                repeat(4) { index ->
                     PinInputCell(
-                        digit = digit,
+                        digit = state.pinAt(index),
+                        isActive = index == state.activeCell,
                         focusRequester = focusRequesters[index],
-                        onDigitEntered = { enteredDigit ->
-                            onAction(ReadyToTypeAction.OnPinDigitEntered(index + 1, enteredDigit))
-                            if (index < 3) focusRequesters[index + 1].requestFocus()
-                        },
-                        onDeletePress = {
-                            println("deleting digit: $digit at index: $index")
-                            when(digit){
-                                null -> {
-                                    if (index > 0) focusRequesters[index - 1].requestFocus()
-                                }
-                                else -> {
-                                    onAction(ReadyToTypeAction.OnPinDigitEntered(index + 1, null))
-                                }
-                            }
-
-                        },
+                        onDigitEntered = { onAction(ReadyToTypeAction.OnPinDigitEntered(it)) },
+                        onDeletePress = { onAction(ReadyToTypeAction.OnDeletePress) },
+                        onCellClicked = { onAction(ReadyToTypeAction.OnCellClicked(index)) },
                     )
                 }
             }
@@ -161,33 +142,21 @@ private fun PinActionArea(
     }
 }
 
-// A regular space kept as the first character so every IME has a real character to
-// delete, making backspace reliable even when no digit has been entered yet.
-// VisualTransformation below strips it from display.
+// Space sentinel ensures the IME always has a character to delete,
+// making soft-keyboard backspace fire onValueChange reliably.
 private const val SENTINEL = " "
-
-private val SentinelVisualTransformation = VisualTransformation { annotated ->
-    val stripped = annotated.text.removePrefix(SENTINEL)
-    TransformedText(
-        text = AnnotatedString(stripped),
-        offsetMapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int = (offset - 1).coerceAtLeast(0)
-            override fun transformedToOriginal(offset: Int): Int =
-                (offset + 1).coerceAtMost(annotated.text.length)
-        }
-    )
-}
 
 @Composable
 private fun PinInputCell(
     digit: Int?,
+    isActive: Boolean,
     focusRequester: FocusRequester,
     onDigitEntered: (Int) -> Unit,
     onDeletePress: () -> Unit,
+    onCellClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var isFocused by remember { mutableStateOf(false) }
-    val borderColor = if (isFocused) {
+    val borderColor = if (isActive) {
         MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.surfaceVariant
@@ -208,15 +177,19 @@ private fun PinInputCell(
         },
         modifier = modifier
             .size(56.dp)
+            .clickable { onCellClicked() }
             .focusRequester(focusRequester)
-            .onFocusChanged { isFocused = it.isFocused }
+            // Only handles hardware-keyboard backspace on an empty cell.
+            // All other cases are covered by onValueChange via the sentinel.
             .onKeyEvent { keyEvent ->
-                if (keyEvent.key == Key.Backspace && keyEvent.type == KeyEventType.KeyUp) {
+                if (digit == null
+                    && keyEvent.key == Key.Backspace
+                    && keyEvent.type == KeyEventType.KeyUp
+                ) {
                     onDeletePress()
                     true
                 } else false
             },
-        visualTransformation = SentinelVisualTransformation,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
         textStyle = MaterialTheme.typography.headlineMedium.copy(
@@ -241,7 +214,7 @@ private fun PinInputCell(
 private fun ReadyToTypeScreenPreview() {
     ReadyToTypeTheme {
         ReadyToTypeScreen(
-            state = ReadyToTypeState(pin1 = 2, pin2 = 5, pin3 = null, pin4 = null),
+            state = ReadyToTypeState(pin1 = 2, pin2 = 5),
             onAction = {},
         )
     }
