@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":core:design-system"))
     implementation(project(":feature:profile:data"))
     implementation(project(":feature:profile:presentation"))
+    implementation(project(":feature:ready_to_type:presentation"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
