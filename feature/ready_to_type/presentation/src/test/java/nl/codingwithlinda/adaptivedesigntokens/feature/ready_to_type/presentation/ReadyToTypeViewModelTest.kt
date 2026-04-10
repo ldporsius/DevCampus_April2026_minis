@@ -2,16 +2,17 @@ package nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentati
 
 import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.domain.PinValidator
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ReadyToTypeViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -31,9 +32,6 @@ class ReadyToTypeViewModelTest {
         Dispatchers.resetMain()
     }
 
-    // The ViewModel stores pin values as "_$digit" (sentinel + digit).
-    private fun pin(digit: Int) = "_$digit"
-
     // region Behavior 1 — entering a digit updates only that cell
 
     @Test
@@ -41,22 +39,22 @@ class ReadyToTypeViewModelTest {
         viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "5"))
 
         val state = viewModel.state.value
-        assertEquals(pin(5), state.pin1)
-        assertNull(state.pin2)
-        assertNull(state.pin3)
-        assertNull(state.pin4)
+        assertEquals("5", state.pin1)
+        assertEquals("", state.pin2)
+        assertEquals("", state.pin3)
+        assertEquals("", state.pin4)
     }
 
     @Test
     fun `entering a digit in cell 2 does not affect other cells`() {
-        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "2")) // cell 0 → activeCell becomes 1
-        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(1, "5")) // cell 1 → activeCell becomes 2
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "2"))
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(1, "5"))
 
         val state = viewModel.state.value
-        assertEquals(pin(2), state.pin1)
-        assertEquals(pin(5), state.pin2)
-        assertNull(state.pin3)
-        assertNull(state.pin4)
+        assertEquals("2", state.pin1)
+        assertEquals("5", state.pin2)
+        assertEquals("", state.pin3)
+        assertEquals("", state.pin4)
     }
 
     // endregion
@@ -80,10 +78,8 @@ class ReadyToTypeViewModelTest {
     // endregion
 
     // region Behavior 3 — backspace on a filled cell clears it and stays
-    // TODO: Re-enable when delete refactor is complete.
-    //       OnDeletePress currently only sets navigation direction; digit clearing is not yet implemented.
-
-    // @Test fun `backspace on filled cell clears the digit`() { ... }
+    // Note: OnDeletePress only moves the cursor; digit clearing is handled by the UI's
+    // onValueChange callback (the IME removes the character from the BasicTextField).
 
     @Test
     fun `backspace on filled cell keeps focus on the same cell`() {
@@ -94,23 +90,24 @@ class ReadyToTypeViewModelTest {
         assertEquals(0, viewModel.state.value.activeCell)
     }
 
-    // @Test fun `backspace on last filled cell sets pin to blank`() { ... }
-
-    // @Test fun `backspace on filled cell does not affect other cells`() { ... }
-
     // endregion
 
     // region Behavior 4 — backspace on an empty cell moves focus to the previous cell
-    // TODO: Re-enable when delete refactor is complete.
 
-    // @Test fun `backspace on empty cell moves focus to previous cell`() { ... }
+    @Test
+    fun `backspace on empty cell moves focus to previous cell`() {
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "5")) // activeCell=1
+        viewModel.onAction(ReadyToTypeAction.OnDeletePress(-1))          // cell 1 is empty
+
+        assertEquals(0, viewModel.state.value.activeCell)
+    }
 
     @Test
     fun `backspace on empty cell does not clear the digit in the previous cell`() {
         viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "5")) // pin1, activeCell=1
         viewModel.onAction(ReadyToTypeAction.OnDeletePress(-1))          // cell 1 is empty
 
-        assertEquals(pin(5), viewModel.state.value.pin1)
+        assertEquals("5", viewModel.state.value.pin1)
     }
 
     // endregion
@@ -129,10 +126,10 @@ class ReadyToTypeViewModelTest {
         viewModel.onAction(ReadyToTypeAction.OnDeletePress(-1))
 
         val state = viewModel.state.value
-        assertNull(state.pin1)
-        assertNull(state.pin2)
-        assertNull(state.pin3)
-        assertNull(state.pin4)
+        assertEquals("", state.pin1)
+        assertEquals("", state.pin2)
+        assertEquals("", state.pin3)
+        assertEquals("", state.pin4)
     }
 
     // endregion
@@ -148,12 +145,12 @@ class ReadyToTypeViewModelTest {
 
     @Test
     fun `clicking a filled cell does not change its digit`() {
-        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "2")) // pin1
-        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(1, "5")) // pin2
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "2"))
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(1, "5"))
         viewModel.onAction(ReadyToTypeAction.OnCellClicked(0))
 
-        assertEquals(pin(2), viewModel.state.value.pin1)
-        assertEquals(pin(5), viewModel.state.value.pin2)
+        assertEquals("2", viewModel.state.value.pin1)
+        assertEquals("5", viewModel.state.value.pin2)
     }
 
     @Test
@@ -163,10 +160,26 @@ class ReadyToTypeViewModelTest {
         viewModel.onAction(ReadyToTypeAction.OnCellClicked(0))
 
         val state = viewModel.state.value
-        assertEquals(pin(2), state.pin1)
-        assertEquals(pin(5), state.pin2)
-        assertNull(state.pin3)
-        assertNull(state.pin4)
+        assertEquals("2", state.pin1)
+        assertEquals("5", state.pin2)
+        assertEquals("", state.pin3)
+        assertEquals("", state.pin4)
+    }
+
+    // endregion
+
+    // region Behavior 7 — active cell advances to action.index + 1, not currentActiveCell + 1
+    //
+    // Bug: if _activeCell was out of sync with action.index (e.g. a spurious onValueChange
+    // fires on focus-in for a filled cell after backpress navigation), the old code advanced
+    // from the current _activeCell value instead of from action.index, overshooting by one.
+
+    @Test
+    fun `re-entering a digit in cell 0 advances focus to cell 1, not cell 2`() {
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "1")) // activeCell → 1
+        viewModel.onAction(ReadyToTypeAction.OnPinDigitEntered(0, "5")) // re-enter at index 0
+
+        assertEquals(1, viewModel.state.value.activeCell)
     }
 
     // endregion

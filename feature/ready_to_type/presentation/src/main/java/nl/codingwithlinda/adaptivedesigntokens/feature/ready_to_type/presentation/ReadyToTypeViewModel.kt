@@ -1,16 +1,12 @@
 package nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation
 
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -30,8 +26,6 @@ class ReadyToTypeViewModel(
         const val SENTINEL = "_"
     }
 
-    private val _activeCell = MutableStateFlow(0)
-
     private val _state = MutableStateFlow(
         ReadyToTypeState(
             pin1 = savedStateHandle["pin1"] ?: "",
@@ -41,49 +35,39 @@ class ReadyToTypeViewModel(
             activeCell = savedStateHandle["activeCell"] ?: 0,
         )
     )
-    val state = _state.combine(_activeCell) { state, activeCell ->
-        state.copy(activeCell = activeCell)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
+    val state = _state.asStateFlow()
 
     private var resetStatusJob: Job? = null
 
-    enum class Direction(val position: Int){
-        FORWARD(1), BACK(-1)
-    }
-    private val _direction = MutableStateFlow(Direction.FORWARD)
-
-
-
     private val mutex = Mutex()
     private val lock = Any()
+
     fun onAction(action: ReadyToTypeAction) {
         when (action) {
-            is ReadyToTypeAction.OnPinDigitEntered -> viewModelScope.launch{
+            is ReadyToTypeAction.OnPinDigitEntered -> viewModelScope.launch {
                 resetStatusJob?.cancel()
 
                 mutex.withLock(lock) {
                     val newvalue = action.digit.lastOrNull { it.isDigit() }?.toString() ?: ""
 
                     _state.update {
-                        it.withPinAt(action.index, newvalue.toString())
-                            .copy(pinStatus = PinStatus.Idle)
+                        val next = if (newvalue.isNotEmpty())
+                            (action.index + 1).coerceIn(0, 3)
+                        else
+                            it.activeCell
+                        it.withPinAt(action.index, newvalue)
+                            .copy(pinStatus = PinStatus.Idle, activeCell = next)
                     }
-                    if (!newvalue.isEmpty()) {
-                        _activeCell.update {
-                            it.plus(1).coerceIn(0, 3)
-                        }
-                    }
-
                 }
             }
             is ReadyToTypeAction.OnDeletePress -> {
-                _activeCell.update {
-                    it.minus(1).coerceIn(0,3)
+                _state.update {
+                    it.copy(activeCell = (it.activeCell - 1).coerceIn(0, 3))
                 }
             }
             is ReadyToTypeAction.OnCellClicked -> {
                 savedStateHandle["activeCell"] = action.index
-                _activeCell.update { action.index }
+                _state.update { it.copy(activeCell = action.index) }
             }
             ReadyToTypeAction.OnClearPin -> {
                 resetStatusJob?.cancel()
@@ -111,7 +95,6 @@ class ReadyToTypeViewModel(
             listOf("pin1", "pin2", "pin3", "pin4").forEach { savedStateHandle[it] = null }
             savedStateHandle["activeCell"] = 0
             _state.update { ReadyToTypeState() }
-            _activeCell.update { 0 }
         }
     }
 }
