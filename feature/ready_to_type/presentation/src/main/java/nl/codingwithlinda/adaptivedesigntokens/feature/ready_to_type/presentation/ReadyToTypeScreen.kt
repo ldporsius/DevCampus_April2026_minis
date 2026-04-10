@@ -1,5 +1,6 @@
 package nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -142,14 +143,14 @@ private fun PinActionArea(
             Text(text = "Enter pin")
         }
         PinStatus.Unlocked -> Text(
-            text = "Unlocked!",
-            style = MaterialTheme.typography.labelMedium,
+            text = "Unlocked succesfully",
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = modifier,
         )
         PinStatus.WrongPin -> Text(
             text = "Wrong PIN, try again",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.error,
             modifier = modifier,
         )
@@ -194,6 +195,7 @@ private fun PinInputCell(
                 modifier = Modifier
                     .fillMaxSize()
                     .border(2.dp, borderColor, RoundedCornerShape(8.dp))
+                    .background(color = MaterialTheme.colorScheme.onBackground.copy(.25f), RoundedCornerShape(8.dp))
                     .clickable { onCellClicked() },
                 contentAlignment = Alignment.Center,
             ) {
