@@ -13,9 +13,6 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="pressingBack_on_last_cell_clears_pin_moves_focus_to_previous_cell()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
       <SelectionState runConfigName="pressingBack_on_all_cells_clears_all()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
