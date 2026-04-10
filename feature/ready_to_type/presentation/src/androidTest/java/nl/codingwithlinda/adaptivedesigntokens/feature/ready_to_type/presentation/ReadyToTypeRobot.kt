@@ -66,11 +66,11 @@ class ReadyToTypeRobot(private val composeTestRule: ComposeContentTestRule) {
     }
 
     fun assertUnlockedDisplayed() = apply {
-        composeTestRule.onNodeWithText("Unlocked!").assertIsDisplayed()
+        composeTestRule.onNodeWithText("\u2713 Unlocked succesfully").assertIsDisplayed()
     }
 
     fun assertWrongPinDisplayed() = apply {
-        composeTestRule.onNodeWithText("Wrong PIN, try again").assertIsDisplayed()
+        composeTestRule.onNodeWithText("\u2717 Wrong PIN, try again").assertIsDisplayed()
     }
 
     fun clickEnterPin() = apply {

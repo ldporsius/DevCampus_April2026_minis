@@ -17,7 +17,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.domain.PinValidator
 
-private const val PIN_STATUS_RESET_DELAY = 700L
+private const val PIN_STATUS_RESET_DELAY = 1000L
 
 class ReadyToTypeViewModel(
     private val savedStateHandle: SavedStateHandle,

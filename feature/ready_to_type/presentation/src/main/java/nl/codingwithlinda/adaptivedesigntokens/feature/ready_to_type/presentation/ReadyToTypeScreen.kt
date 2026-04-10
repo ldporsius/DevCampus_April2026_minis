@@ -123,6 +123,7 @@ fun ReadyToTypeScreen(
 
             PinActionArea(
                 pinStatus = state.pinStatus,
+                canEnterPin = state.canEnterPin,
                 onAction = onAction,
             )
         }
@@ -132,6 +133,7 @@ fun ReadyToTypeScreen(
 @Composable
 private fun PinActionArea(
     pinStatus: PinStatus,
+    canEnterPin: Boolean,
     onAction: (ReadyToTypeAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -140,16 +142,20 @@ private fun PinActionArea(
             onClick = { onAction(ReadyToTypeAction.OnConfirmPin) },
             modifier = modifier,
         ) {
-            Text(text = "Enter pin")
+            val alpha = if (canEnterPin) 0.85f else 0.35f
+            Text(
+                text = "Enter pin",
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = alpha),
+            )
         }
         PinStatus.Unlocked -> Text(
-            text = "Unlocked succesfully",
+            text = "\u2713 Unlocked succesfully",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = modifier,
         )
         PinStatus.WrongPin -> Text(
-            text = "Wrong PIN, try again",
+            text = "\u2717 Wrong PIN, try again",
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.error,
             modifier = modifier,

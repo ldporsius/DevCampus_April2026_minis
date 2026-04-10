@@ -28,4 +28,5 @@ data class ReadyToTypeState(
 
     fun listPins() = listOf(pin1, pin2, pin3, pin4)
 
+    val canEnterPin: Boolean get() = listPins().all { it.isNotEmpty() }
 }
