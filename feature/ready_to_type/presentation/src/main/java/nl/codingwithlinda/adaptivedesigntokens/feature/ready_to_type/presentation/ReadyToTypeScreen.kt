@@ -19,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,15 +29,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.ReadyToTypeViewModel.Companion.SENTINEL
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.theme.ReadyToTypeTheme
 import org.koin.androidx.compose.koinViewModel
 
@@ -91,20 +95,30 @@ fun ReadyToTypeScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(modifier = Modifier
+                .onKeyEvent{ keyEvent ->
+                    if (keyEvent.key == Key.Backspace
+                        && keyEvent.type == KeyEventType.KeyUp
+                    ) {
+                        onAction(ReadyToTypeAction.OnDeletePress(-1))
+                        false
+                    } else false
+                },
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 repeat(4) { index ->
                     PinInputCell(
                         digit = state.pinAt(index),
                         isActive = index == state.activeCell,
                         focusRequester = focusRequesters[index],
-                        onDigitEntered = { onAction(ReadyToTypeAction.OnPinDigitEntered(it)) },
-                        onDeletePress = { onAction(ReadyToTypeAction.OnDeletePress) },
+                        onDigitEntered = { onAction(ReadyToTypeAction.OnPinDigitEntered(index, it)) },
                         onCellClicked = { onAction(ReadyToTypeAction.OnCellClicked(index)) },
+                        modifier = Modifier.testTag("pin_cell_$index"),
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+
 
             PinActionArea(
                 pinStatus = state.pinStatus,
@@ -142,17 +156,13 @@ private fun PinActionArea(
     }
 }
 
-// Space sentinel ensures the IME always has a character to delete,
-// making soft-keyboard backspace fire onValueChange reliably.
-private const val SENTINEL = " "
 
 @Composable
 private fun PinInputCell(
-    digit: Int?,
+    digit: String,
     isActive: Boolean,
     focusRequester: FocusRequester,
-    onDigitEntered: (Int) -> Unit,
-    onDeletePress: () -> Unit,
+    onDigitEntered: (String) -> Unit,
     onCellClicked: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -162,34 +172,17 @@ private fun PinInputCell(
         MaterialTheme.colorScheme.surfaceVariant
     }
 
-    val value = if (digit != null) "$SENTINEL$digit" else SENTINEL
-
     BasicTextField(
-        value = value,
+        value = digit,
         onValueChange = { newValue ->
-            when {
-                newValue.isEmpty() || newValue == SENTINEL -> onDeletePress()
-                else -> newValue.replace(SENTINEL, "")
-                    .lastOrNull()
-                    ?.digitToIntOrNull()
-                    ?.let { onDigitEntered(it) }
-            }
+            val clean = SENTINEL + (newValue.lastOrNull { it.isDigit() } ?: "")
+            println("--- READYTOTYPE SCREEN --- onValueChange:$newValue -> $clean")
+
+            onDigitEntered(clean)
         },
         modifier = modifier
             .size(56.dp)
-            .clickable { onCellClicked() }
-            .focusRequester(focusRequester)
-            // Only handles hardware-keyboard backspace on an empty cell.
-            // All other cases are covered by onValueChange via the sentinel.
-            .onKeyEvent { keyEvent ->
-                if (digit == null
-                    && keyEvent.key == Key.Backspace
-                    && keyEvent.type == KeyEventType.KeyUp
-                ) {
-                    onDeletePress()
-                    true
-                } else false
-            },
+            .focusRequester(focusRequester),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
         textStyle = MaterialTheme.typography.headlineMedium.copy(
@@ -200,7 +193,8 @@ private fun PinInputCell(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .border(2.dp, borderColor, RoundedCornerShape(8.dp)),
+                    .border(2.dp, borderColor, RoundedCornerShape(8.dp))
+                    .clickable { onCellClicked() },
                 contentAlignment = Alignment.Center,
             ) {
                 innerTextField()
@@ -214,7 +208,7 @@ private fun PinInputCell(
 private fun ReadyToTypeScreenPreview() {
     ReadyToTypeTheme {
         ReadyToTypeScreen(
-            state = ReadyToTypeState(pin1 = 2, pin2 = 5),
+            state = ReadyToTypeState(pin1 = " 2", pin2 = " 5"),
             onAction = {},
         )
     }

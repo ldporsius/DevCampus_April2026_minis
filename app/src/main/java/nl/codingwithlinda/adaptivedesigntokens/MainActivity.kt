@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -15,6 +16,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.AdaptiveDesignTokensTheme
 import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.ProfileRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.ReadyToTypeRoot
@@ -27,11 +29,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             var selectedTab by remember { mutableIntStateOf(0) }
 
-            Column(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
+            Column(modifier = Modifier
+                .fillMaxSize()
+                .safeContentPadding()
+            ) {
                 AdaptiveDesignTokensTheme {
                     TabRow(
                         selectedTabIndex = selectedTab,
-                        modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Tab(
                             selected = selectedTab == 0,
