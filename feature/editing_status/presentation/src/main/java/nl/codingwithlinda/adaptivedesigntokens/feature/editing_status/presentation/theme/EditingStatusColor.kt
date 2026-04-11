@@ -3,8 +3,8 @@ package nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentat
 import androidx.compose.ui.graphics.Color
 
 // Background & surface — warm parchment tones
-val EsBg = Color(0xFFF2E8D9)
-val EsSurface = Color(0xFFFAF4E8)
+val EsBg = Color(0xFFfefefd)
+val EsSurface = Color(0xFFf1ece9)
 val EsSurfaceVariant = Color(0xFFEAD9C0)
 
 // Primary — warm walnut brown
@@ -32,8 +32,8 @@ val EsErrorContainer = Color(0xFFFFDAD6)
 val EsOnErrorContainer = Color(0xFF410002)
 
 // Text & outline
-val EsOnBg = Color(0xFF2D1B16)
-val EsOnSurface = Color(0xFF2D1B16)
+val EsOnBg = Color(0xFF160a02)
+val EsOnSurface = Color(0xFF766c64)
 val EsOnSurfaceVariant = Color(0xFF6B4F48)
 val EsOutline = Color(0xFF9C7B74)
 val EsOutlineVariant = Color(0xFFCEB3AE)

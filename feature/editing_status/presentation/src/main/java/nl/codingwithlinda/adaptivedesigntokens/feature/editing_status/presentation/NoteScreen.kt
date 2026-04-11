@@ -20,10 +20,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -52,6 +56,13 @@ fun NoteScreen(
     onAction: (NoteAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -73,7 +84,10 @@ fun NoteScreen(
             NoteTextField(
                 text = state.noteText,
                 onTextChange = { onAction(NoteAction.OnNoteChanged(it)) },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester)
+                ,
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -94,29 +108,10 @@ private fun EditingStatusChip(
 ) {
     if (status == EditingStatus.Idle) return
 
-    val isEditing = status == EditingStatus.Editing
-
-    val containerColor by animateColorAsState(
-        targetValue = if (isEditing)
-            MaterialTheme.colorScheme.tertiaryContainer
-        else
-            MaterialTheme.colorScheme.primaryContainer,
-        animationSpec = tween(300),
-        label = "chip_container",
-    )
-    val contentColor by animateColorAsState(
-        targetValue = if (isEditing)
-            MaterialTheme.colorScheme.onTertiaryContainer
-        else
-            MaterialTheme.colorScheme.onPrimaryContainer,
-        animationSpec = tween(300),
-        label = "chip_content",
-    )
 
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(containerColor)
             .padding(horizontal = 12.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -124,7 +119,7 @@ private fun EditingStatusChip(
         Text(
             text = status.statusText(),
             style = MaterialTheme.typography.labelMedium,
-            color = contentColor,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -153,13 +148,7 @@ private fun NoteTextField(
                     .background(MaterialTheme.colorScheme.surface)
                     .padding(16.dp),
             ) {
-                if (text.isEmpty()) {
-                    Text(
-                        text = "Start writing your note…",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+
                 innerTextField()
             }
         },
