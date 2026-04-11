@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":feature:profile:data"))
     implementation(project(":feature:profile:presentation"))
     implementation(project(":feature:ready_to_type:presentation"))
+    implementation(project(":feature:editing_status:presentation"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -58,6 +59,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    testImplementation(libs.koin.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)

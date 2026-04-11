@@ -13,13 +13,10 @@
         </DropdownSelection>
         <DialogSelection />
       </SelectionState>
-      <SelectionState runConfigName="pressingBack_on_all_cells_clears_all()">
+      <SelectionState runConfigName="chip_remains_visible_when_soft_keyboard_is_open()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
-      <SelectionState runConfigName="pressingBack_andEnterNewValue_newValueCorrect()">
-        <option name="selectionMode" value="DROPDOWN" />
-      </SelectionState>
-      <SelectionState runConfigName="ReadyToTypeScreenViewModelTest">
+      <SelectionState runConfigName="testNoteScreen()">
         <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>

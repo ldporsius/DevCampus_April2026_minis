@@ -18,6 +18,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.AdaptiveDesignTokensTheme
+import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentation.NoteRoot
+import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentation.theme.EditingStatusTheme
 import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.ProfileRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.ReadyToTypeRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.theme.ReadyToTypeTheme
@@ -48,6 +50,11 @@ class MainActivity : ComponentActivity() {
                             onClick = { selectedTab = 1 },
                             text = { Text("Ready to Type") },
                         )
+                        Tab(
+                            selected = selectedTab == 2,
+                            onClick = { selectedTab = 2 },
+                            text = { Text("Note") },
+                        )
                     }
                 }
 
@@ -55,6 +62,7 @@ class MainActivity : ComponentActivity() {
                     when (selectedTab) {
                         0 -> AdaptiveDesignTokensTheme { ProfileRoot() }
                         1 -> ReadyToTypeTheme { ReadyToTypeRoot() }
+                        2 -> EditingStatusTheme { NoteRoot() }
                     }
                 }
             }
