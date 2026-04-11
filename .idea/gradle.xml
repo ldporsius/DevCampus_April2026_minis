@@ -13,6 +13,7 @@
             <option value="$PROJECT_DIR$/core" />
             <option value="$PROJECT_DIR$/core/design-system" />
             <option value="$PROJECT_DIR$/feature" />
+            <option value="$PROJECT_DIR$/feature/cloud_photo_upload" />
             <option value="$PROJECT_DIR$/feature/editing_status" />
             <option value="$PROJECT_DIR$/feature/editing_status/presentation" />
             <option value="$PROJECT_DIR$/feature/profile" />

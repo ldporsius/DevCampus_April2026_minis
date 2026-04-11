@@ -23,6 +23,7 @@ import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentati
 import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.ProfileRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.ReadyToTypeRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.theme.ReadyToTypeTheme
+import nl.codingwithlinda.cloud_photo_upload.presentation.PhotoBackupRoot
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +56,11 @@ class MainActivity : ComponentActivity() {
                             onClick = { selectedTab = 2 },
                             text = { Text("Note") },
                         )
+                        Tab(
+                            selected = selectedTab == 3,
+                            onClick = { selectedTab = 3 },
+                            text = { Text("Photo") },
+                        )
                     }
                 }
 
@@ -63,6 +69,7 @@ class MainActivity : ComponentActivity() {
                         0 -> AdaptiveDesignTokensTheme { ProfileRoot() }
                         1 -> ReadyToTypeTheme { ReadyToTypeRoot() }
                         2 -> EditingStatusTheme { NoteRoot() }
+                        3 -> PhotoBackupRoot()
                     }
                 }
             }

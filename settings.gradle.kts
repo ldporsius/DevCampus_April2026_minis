@@ -31,4 +31,4 @@ include(":feature:profile:presentation")
 include(":feature:ready_to_type:domain")
 include(":feature:ready_to_type:presentation")
 include(":feature:editing_status:presentation")
- 
+include(":feature:cloud_photo_upload")

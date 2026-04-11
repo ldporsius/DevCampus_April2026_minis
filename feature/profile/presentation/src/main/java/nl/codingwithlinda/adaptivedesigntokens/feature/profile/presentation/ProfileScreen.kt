@@ -3,17 +3,17 @@ package nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -39,16 +39,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.LocalTypography
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.UiMode
-import org.koin.androidx.compose.koinViewModel
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.AdaptiveDesignTokensTheme
-import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.LocalSizeProvider
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.LocalSpacing
+import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.LocalTypography
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.toAvatarSize
-import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.toSpacing
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.toLocalTypography
+import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.toSpacing
 import nl.codingwithlinda.adaptivedesigntokens.feature.profile.domain.model.UserProfile
+import org.koin.androidx.compose.koinViewModel
 
 // ── State ────────────────────────────────────────────────────────────────────
 

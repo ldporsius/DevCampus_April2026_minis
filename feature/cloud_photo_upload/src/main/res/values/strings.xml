@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="backup_running">Backing up photos …</string>
+    <string name="backup_paused">Backup paused</string>
+    <string name="backup_finished">Backup completed</string>
+    <string name="ready_to_backup">Ready to back up %1$s photos</string>
+    <string name="backup_progress">%1$s / %2$s photos uploaded</string>
+    <string name="waiting_for_connectivity">Waiting for internet connection</string>
+    <string name="number_of_photos_uploaded">%1$s photos successfully uploaded</string>
+    <string name="button_start_backup">Start Backup</string>
+    <string name="button_in_progress">Backup in progress</string>
+    <string name="button_completed">✓ Backup completed</string>
+</resources>
