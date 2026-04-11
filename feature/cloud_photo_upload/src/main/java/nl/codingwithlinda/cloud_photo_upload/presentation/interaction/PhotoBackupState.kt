@@ -3,7 +3,9 @@ package nl.codingwithlinda.cloud_photo_upload.presentation.interaction
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import nl.codingwithlinda.cloud_photo_upload.R
+import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CardTextStyle
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpGrassGreen
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpOnGrassGreen
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpOnSkyBlue
@@ -37,6 +39,17 @@ fun PhotoBackupState.toButtonText() = when (this) {
     PhotoBackupState.RUNNING -> stringResource(R.string.button_in_progress)
     PhotoBackupState.PAUSED -> stringResource(R.string.button_in_progress)
     PhotoBackupState.FINISHED -> stringResource(R.string.button_completed)
+}
+
+fun PhotoBackupState.toCardTextStyle() = when (this) {
+    PhotoBackupState.FINISHED -> CardTextStyle(
+        descriptionWeight = FontWeight.Bold,
+        statusWeight = FontWeight.Normal,
+    )
+    else -> CardTextStyle(
+        descriptionWeight = FontWeight.Normal,
+        statusWeight = FontWeight.Bold,
+    )
 }
 
 @Composable

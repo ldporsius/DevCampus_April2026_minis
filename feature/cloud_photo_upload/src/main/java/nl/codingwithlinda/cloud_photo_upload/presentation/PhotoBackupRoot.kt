@@ -16,22 +16,24 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.PhotoAction
-import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.PhotoBackupState
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.PhotoBackupUiState
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.toButtonColors
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.toButtonText
+import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.toCardTextStyle
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.toDescription
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.toStatusText
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CloudPhotoTheme
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpBg
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpSkyBlue
 import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpSurface
+import nl.codingwithlinda.cloud_photo_upload.presentation.theme.LocalCardTextStyle
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -77,12 +79,7 @@ fun PhotoBackupScreen(
                 uiState = uiState,
             )
             Button(
-                onClick = {
-                    if (uiState.state == PhotoBackupState.FINISHED)
-                        onAction(PhotoAction.BackupCompleted)
-                    else
-                        onAction(PhotoAction.StartBackup)
-                },
+                onClick = { onAction(uiState.buttonAction()) },
                 enabled = uiState.isButtonEnabled(),
                 colors = uiState.state.toButtonColors(),
                 modifier = Modifier.fillMaxWidth(),
@@ -98,30 +95,35 @@ fun PhotoBackupStatusCard(
     modifier: Modifier = Modifier,
     uiState: PhotoBackupUiState,
 ) {
-    ElevatedCard(
-        modifier = modifier,
-        colors = CardDefaults.elevatedCardColors(containerColor = CpSurface),
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+    CompositionLocalProvider(LocalCardTextStyle provides uiState.state.toCardTextStyle()) {
+        ElevatedCard(
+            modifier = modifier,
+            colors = CardDefaults.elevatedCardColors(containerColor = CpSurface),
         ) {
-            Text(uiState.state.toDescription())
-            Text(
-                uiState.state.toStatusText(uiState.numberUploaded, uiState.total),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-            )
-            LinearProgressIndicator(
-                progress = { uiState.progress() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(16.dp),
-                color = CpSkyBlue,
-                trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-            )
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Text(
+                    text = uiState.state.toDescription(),
+                    fontWeight = LocalCardTextStyle.current.descriptionWeight,
+                )
+                Text(
+                    text = uiState.state.toStatusText(uiState.numberUploaded, uiState.total),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = LocalCardTextStyle.current.statusWeight,
+                )
+                LinearProgressIndicator(
+                    progress = { uiState.progress() },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(16.dp),
+                    color = CpSkyBlue,
+                    trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                )
+            }
         }
     }
 }

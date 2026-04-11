@@ -7,4 +7,8 @@ data class PhotoBackupUiState(
 ){
     fun isButtonEnabled() = state == PhotoBackupState.IDLE || state == PhotoBackupState.FINISHED
     fun progress() = (numberUploaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+    fun buttonAction(): PhotoAction = when (state) {
+        PhotoBackupState.FINISHED -> PhotoAction.BackupCompleted
+        else -> PhotoAction.StartBackup
+    }
 }
