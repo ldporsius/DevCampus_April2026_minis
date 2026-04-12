@@ -2,6 +2,8 @@ package nl.codingwithlinda.cloud_photo_upload.data
 
 import android.content.Context
 import androidx.work.CoroutineWorker
+import androidx.work.Constraints
+import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
@@ -47,9 +49,10 @@ class PhotoBackupWorker(
 }
 
 fun backupWorkRequest(total: Int) = OneTimeWorkRequestBuilder<PhotoBackupWorker>()
-    .setInputData(
-        workDataOf(
-            PhotoBackupWorker.KEY_TOTAL to total
-        )
+    .setInputData(workDataOf(PhotoBackupWorker.KEY_TOTAL to total))
+    .setConstraints(
+        Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
     )
     .build()
