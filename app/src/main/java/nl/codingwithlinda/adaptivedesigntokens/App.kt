@@ -6,8 +6,12 @@ import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.di.p
 import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentation.di.editingStatusPresentationModule
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.di.readyToTypePresentationModule
 import nl.codingwithlinda.cloud_photo_upload.di.cloudPhotoModule
+import androidx.work.Configuration
+import androidx.work.WorkManager
+import androidx.work.WorkerFactory
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.koin.core.context.GlobalContext
 
 class App : Application() {
     override fun onCreate() {
@@ -22,5 +26,13 @@ class App : Application() {
                 cloudPhotoModule
             )
         }
+
+        val factory = GlobalContext.get().get<WorkerFactory>()
+        WorkManager.initialize(
+            this,
+            Configuration.Builder()
+                .setWorkerFactory(factory)
+                .build()
+        )
     }
 }

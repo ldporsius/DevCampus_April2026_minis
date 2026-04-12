@@ -13,6 +13,7 @@ import nl.codingwithlinda.cloud_photo_upload.presentation.theme.CpSkyBlue
 
 enum class PhotoBackupState {
     IDLE,
+    STARTED,
     RUNNING,
     PAUSED,
     FINISHED
@@ -21,6 +22,7 @@ enum class PhotoBackupState {
 @Composable
 fun PhotoBackupState.toDescription() = when(this){
     PhotoBackupState.IDLE -> ""
+    PhotoBackupState.STARTED -> stringResource(R.string.backup_started)
     PhotoBackupState.RUNNING -> stringResource( R.string.backup_running)
     PhotoBackupState.PAUSED -> stringResource(R.string.backup_paused)
     PhotoBackupState.FINISHED -> stringResource(R.string.backup_finished)
@@ -28,6 +30,7 @@ fun PhotoBackupState.toDescription() = when(this){
 @Composable
 fun PhotoBackupState.toStatusText(progress: Int, numPhotos: Int) = when(this){
     PhotoBackupState.IDLE -> stringResource(R.string.ready_to_backup, numPhotos)
+    PhotoBackupState.STARTED -> ""
     PhotoBackupState.RUNNING -> stringResource(R.string.backup_progress, progress, numPhotos)
     PhotoBackupState.PAUSED -> stringResource(R.string.waiting_for_connectivity)
     PhotoBackupState.FINISHED -> stringResource(R.string.number_of_photos_uploaded, numPhotos)
@@ -36,6 +39,7 @@ fun PhotoBackupState.toStatusText(progress: Int, numPhotos: Int) = when(this){
 @Composable
 fun PhotoBackupState.toButtonText() = when (this) {
     PhotoBackupState.IDLE -> stringResource(R.string.button_start_backup)
+    PhotoBackupState.STARTED -> ""
     PhotoBackupState.RUNNING -> stringResource(R.string.button_in_progress)
     PhotoBackupState.PAUSED -> stringResource(R.string.button_in_progress)
     PhotoBackupState.FINISHED -> stringResource(R.string.button_completed)

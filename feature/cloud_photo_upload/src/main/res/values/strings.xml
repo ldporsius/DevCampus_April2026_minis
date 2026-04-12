@@ -10,4 +10,5 @@
     <string name="button_start_backup">Start Backup</string>
     <string name="button_in_progress">Backup in progress</string>
     <string name="button_completed">✓ Backup completed</string>
+    <string name="backup_started">Pending …</string>
 </resources>

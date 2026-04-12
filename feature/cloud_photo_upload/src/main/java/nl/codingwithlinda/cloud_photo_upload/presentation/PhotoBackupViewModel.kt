@@ -8,89 +8,80 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import nl.codingwithlinda.cloud_photo_upload.data.backupWorkRequest
+import nl.codingwithlinda.cloud_photo_upload.data.photoUploadWorkRequest
 import nl.codingwithlinda.cloud_photo_upload.domain.NetworkObserver
 import nl.codingwithlinda.cloud_photo_upload.domain.NetworkStatus
 import nl.codingwithlinda.cloud_photo_upload.domain.PhotoRepository
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.PhotoAction
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.PhotoBackupState
 import nl.codingwithlinda.cloud_photo_upload.presentation.interaction.PhotoBackupUiState
-import nl.codingwithlinda.cloud_photo_upload.data.PhotoBackupWorker.Companion.KEY_PROGRESS
-import nl.codingwithlinda.cloud_photo_upload.data.PhotoBackupWorker.Companion.KEY_TOTAL
 
 class PhotoBackupViewModel(
     private val workManager: WorkManager,
-    private val photoRepository: PhotoRepository,
+    photoRepository: PhotoRepository,
     private val networkObserver: NetworkObserver,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(PhotoBackupUiState(total = photoRepository.getPhotoCount()))
+    private val photos = photoRepository.getPhotos()
 
+    private val _uiState = MutableStateFlow(PhotoBackupUiState(total = photos.size))
     val uiState = _uiState.stateIn(viewModelScope, SharingStarted.Eagerly, PhotoBackupUiState())
 
-    val _workId = MutableStateFlow< List<String>>(emptyList())
-
-
     init {
-        viewModelScope.launch {
-            workManager.getWorkInfosForUniqueWork(UNIQUE_WORK_NAME).get().filter {
-                it.state == WorkInfo.State.SUCCEEDED
-            }.forEach { workInfo ->
-                _workId.update { it  + workInfo.id.toString() }
-            }
-        }
-
         viewModelScope.launch {
             combine(
                 workManager.getWorkInfosForUniqueWorkFlow(UNIQUE_WORK_NAME),
                 networkObserver.observe()
             ) { workInfos, networkStatus ->
-                workInfos.firstOrNull() to networkStatus
-            }.collect { (info, networkStatus) ->
-                if (info == null) return@collect
+                if (workInfos.isEmpty()) return@combine null
 
-                info.progress.getInt(KEY_TOTAL, -1).let { total ->
-                    if (total == -1) return@let
-                    _uiState.update { it.copy(total = total) }
-                }
+                val succeeded = workInfos.count { it.state == WorkInfo.State.SUCCEEDED }
+                val hasRunning = workInfos.any { it.state == WorkInfo.State.RUNNING }
+                val isEnqueued = workInfos.any { it.state == WorkInfo.State.ENQUEUED }
+                val allFinished = workInfos.all { it.state.isFinished }
+                val isProgressing = hasRunning || (isEnqueued && succeeded > 0)
 
-                val progress = info.progress.getInt(KEY_PROGRESS, 0)
                 val backupState = when {
                     networkStatus == NetworkStatus.Unavailable
-                        && info.state == WorkInfo.State.RUNNING  -> PhotoBackupState.PAUSED
-                    networkStatus == NetworkStatus.Unavailable
-                        && info.state == WorkInfo.State.ENQUEUED -> PhotoBackupState.PAUSED
-                    else -> when (info.state) {
-                        WorkInfo.State.RUNNING   -> PhotoBackupState.RUNNING
-                        WorkInfo.State.ENQUEUED  -> PhotoBackupState.PAUSED
-                        WorkInfo.State.SUCCEEDED -> PhotoBackupState.FINISHED
-                        WorkInfo.State.FAILED    -> PhotoBackupState.PAUSED
-                        WorkInfo.State.BLOCKED   -> PhotoBackupState.PAUSED
-                        WorkInfo.State.CANCELLED -> PhotoBackupState.IDLE
-                    }
-                }.let {
-                    if(info.id.toString() in _workId.value) {
-                        PhotoBackupState.IDLE
-                    }
-                    else it
+                        && (hasRunning || isEnqueued) -> PhotoBackupState.PAUSED
+                    isProgressing   -> PhotoBackupState.RUNNING
+                    isEnqueued      -> PhotoBackupState.STARTED   // waiting for constraints, nothing uploaded yet
+                    allFinished && succeeded == workInfos.size -> PhotoBackupState.FINISHED
+                    allFinished     -> PhotoBackupState.PAUSED    // some workers failed
+                    else            -> PhotoBackupState.IDLE
                 }
 
-                _uiState.update { it.copy(state = backupState, numberUploaded = progress) }
+                PhotoBackupUiState(state = backupState, numberUploaded = succeeded, total = workInfos.size)
             }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collect { newState -> _uiState.update { newState } }
         }
     }
 
     fun onAction(action: PhotoAction) {
         when (action) {
             PhotoAction.BackupCompleted -> {
-                _uiState.update { PhotoBackupUiState(total = photoRepository.getPhotoCount()) }
+                workManager.pruneWork()
+                _uiState.update { PhotoBackupUiState(total = photos.size) }
             }
             PhotoAction.StartBackup -> {
-                val request = backupWorkRequest(photoRepository.getPhotoCount())
-                workManager.enqueueUniqueWork(UNIQUE_WORK_NAME, ExistingWorkPolicy.REPLACE, request)
+                val requests = photos.map { uri -> photoUploadWorkRequest(uri) }
+
+                var continuation = workManager.beginUniqueWork(
+                    UNIQUE_WORK_NAME,
+                    ExistingWorkPolicy.KEEP,
+                    requests.first()
+                )
+                requests.drop(1).forEach { request ->
+                    continuation = continuation.then(request)
+                }
+                continuation.enqueue()
             }
         }
     }
