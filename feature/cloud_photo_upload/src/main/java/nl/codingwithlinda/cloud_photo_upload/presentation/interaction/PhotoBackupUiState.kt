@@ -11,4 +11,5 @@ data class PhotoBackupUiState(
         PhotoBackupState.FINISHED -> PhotoAction.BackupCompleted
         else -> PhotoAction.StartBackup
     }
+    fun isProgressVisible() = state == PhotoBackupState.RUNNING || state == PhotoBackupState.PAUSED
 }

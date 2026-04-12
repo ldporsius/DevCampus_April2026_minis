@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.material3.Button
@@ -101,28 +102,37 @@ fun PhotoBackupStatusCard(
             colors = CardDefaults.elevatedCardColors(containerColor = CpSurface),
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 128.dp)
+                    .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             ) {
-                Text(
-                    text = uiState.state.toDescription(),
-                    fontWeight = LocalCardTextStyle.current.descriptionWeight,
-                )
+
+                uiState.state.toDescription().takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        fontWeight = LocalCardTextStyle.current.descriptionWeight,
+                    )
+                }
                 Text(
                     text = uiState.state.toStatusText(uiState.numberUploaded, uiState.total),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = LocalCardTextStyle.current.statusWeight,
                 )
-                LinearProgressIndicator(
-                    progress = { uiState.progress() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(16.dp),
-                    color = CpSkyBlue,
-                    trackColor = ProgressIndicatorDefaults.linearTrackColor,
-                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                )
+
+                if (uiState.isProgressVisible()) {
+                    LinearProgressIndicator(
+                        progress = { uiState.progress() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(16.dp),
+                        color = CpSkyBlue,
+                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                    )
+                }
             }
         }
     }
