@@ -12,7 +12,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import nl.codingwithlinda.cloud_photo_upload.data.StubPhotoRepository
 import nl.codingwithlinda.cloud_photo_upload.domain.NetworkObserver
 import nl.codingwithlinda.cloud_photo_upload.domain.NetworkStatus
 import nl.codingwithlinda.cloud_photo_upload.presentation.PhotoBackupViewModel
@@ -54,7 +53,7 @@ class PhotoBackupViewModelTest {
         val state = vm.uiState.first()
 
         assertEquals(PhotoBackupState.IDLE, state.state)
-        assertEquals(200, state.total) // StubPhotoRepository returns 200
+        assertEquals(200, state.total) // default photoCount in buildViewModel
     }
 
     @Test
@@ -85,7 +84,7 @@ class PhotoBackupViewModelTest {
     }
 
     @Test
-    fun networkUnavailable_whileEnqueued_stateIsPaused() = runTest {
+    fun networkUnavailable_whileEnqueued_stateIsPaused() = runTest(testDispatcher) {
         val vm = buildViewModel(NetworkStatus.Unavailable)
 
         vm.onAction(PhotoAction.StartBackup)
@@ -96,12 +95,46 @@ class PhotoBackupViewModelTest {
         assertEquals(PhotoBackupState.PAUSED, state.state)
     }
 
+    @Test
+    fun afterFinished_newViewModelStartsIdle() = runTest(testDispatcher) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val testDriver = WorkManagerTestInitHelper.getTestDriver(context)!!
+
+        // Use 1 photo so the worker finishes in a single delay(200) cycle
+        val vm1 = buildViewModel(networkStatus = NetworkStatus.Available, photoCount = 1)
+        vm1.onAction(PhotoAction.StartBackup)
+
+        val workId = workManager
+            .getWorkInfosForUniqueWork(PhotoBackupViewModel.UNIQUE_WORK_NAME)
+            .get()
+            .first().id
+
+        // Satisfy network constraint → worker runs to SUCCEEDED
+        testDriver.setAllConstraintsMet(workId)
+
+        val finalState = workManager.getWorkInfoByIdFlow(workId)
+            .first { it?.state?.isFinished == true }
+        assertEquals(WorkInfo.State.SUCCEEDED, finalState?.state)
+
+        // User acknowledges completion — this must prune WorkManager's record
+        vm1.onAction(PhotoAction.BackupCompleted)
+
+        // Simulate new app launch: fresh ViewModel with no in-memory state
+        val vm2 = buildViewModel(NetworkStatus.Available)
+        assertEquals(PhotoBackupState.IDLE, vm2.uiState.first().state)
+    }
+
     // --- helpers ---
 
-    private fun buildViewModel(networkStatus: NetworkStatus): PhotoBackupViewModel {
+    private fun buildViewModel(
+        networkStatus: NetworkStatus,
+        photoCount: Int = 200,
+    ): PhotoBackupViewModel {
         return PhotoBackupViewModel(
             workManager = workManager,
-            photoRepository = StubPhotoRepository(),
+            photoRepository = object : nl.codingwithlinda.cloud_photo_upload.domain.PhotoRepository {
+                override fun getPhotoCount() = photoCount
+            },
             networkObserver = FakeNetworkObserver(networkStatus),
         )
     }

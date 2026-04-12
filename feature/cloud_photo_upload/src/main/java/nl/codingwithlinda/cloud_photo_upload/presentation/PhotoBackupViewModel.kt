@@ -31,7 +31,18 @@ class PhotoBackupViewModel(
 
     val uiState = _uiState.stateIn(viewModelScope, SharingStarted.Eagerly, PhotoBackupUiState())
 
+    val _workId = MutableStateFlow< List<String>>(emptyList())
+
+
     init {
+        viewModelScope.launch {
+            workManager.getWorkInfosForUniqueWork(UNIQUE_WORK_NAME).get().filter {
+                it.state == WorkInfo.State.SUCCEEDED
+            }.forEach { workInfo ->
+                _workId.update { it  + workInfo.id.toString() }
+            }
+        }
+
         viewModelScope.launch {
             combine(
                 workManager.getWorkInfosForUniqueWorkFlow(UNIQUE_WORK_NAME),
@@ -60,7 +71,13 @@ class PhotoBackupViewModel(
                         WorkInfo.State.BLOCKED   -> PhotoBackupState.PAUSED
                         WorkInfo.State.CANCELLED -> PhotoBackupState.IDLE
                     }
+                }.let {
+                    if(info.id.toString() in _workId.value) {
+                        PhotoBackupState.IDLE
+                    }
+                    else it
                 }
+
                 _uiState.update { it.copy(state = backupState, numberUploaded = progress) }
             }
         }
