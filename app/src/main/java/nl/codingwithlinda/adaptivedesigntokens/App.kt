@@ -6,6 +6,7 @@ import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.di.p
 import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentation.di.editingStatusPresentationModule
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.di.readyToTypePresentationModule
 import nl.codingwithlinda.cloud_photo_upload.di.cloudPhotoModule
+import nl.codingwithlinda.guided_tour.di.guidedTourModule
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
@@ -23,7 +24,8 @@ class App : Application() {
                 profilePresentationModule,
                 readyToTypePresentationModule,
                 editingStatusPresentationModule,
-                cloudPhotoModule
+                cloudPhotoModule,
+                guidedTourModule
             )
         }
 

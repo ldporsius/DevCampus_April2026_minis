@@ -24,6 +24,7 @@ import nl.codingwithlinda.adaptivedesigntokens.feature.profile.presentation.Prof
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.ReadyToTypeRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.theme.ReadyToTypeTheme
 import nl.codingwithlinda.cloud_photo_upload.presentation.PhotoBackupRoot
+import nl.codingwithlinda.guided_tour.presentation.TaskManagerRoot
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,6 +62,11 @@ class MainActivity : ComponentActivity() {
                             onClick = { selectedTab = 3 },
                             text = { Text("Photo") },
                         )
+                        Tab(
+                            selected = selectedTab == 4,
+                            onClick = { selectedTab = 4 },
+                            text = { Text("Tour") },
+                        )
                     }
                 }
 
@@ -70,6 +76,7 @@ class MainActivity : ComponentActivity() {
                         1 -> ReadyToTypeTheme { ReadyToTypeRoot() }
                         2 -> EditingStatusTheme { NoteRoot() }
                         3 -> PhotoBackupRoot()
+                        4 -> TaskManagerRoot()
                     }
                 }
             }
