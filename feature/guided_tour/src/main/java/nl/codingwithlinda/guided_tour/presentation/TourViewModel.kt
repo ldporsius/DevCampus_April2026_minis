@@ -63,8 +63,4 @@ class TourViewModel(
         dataSource.setTourDone(false)
     }
 
-    override fun onCleared() {
-        reset()
-        super.onCleared()
-    }
 }
