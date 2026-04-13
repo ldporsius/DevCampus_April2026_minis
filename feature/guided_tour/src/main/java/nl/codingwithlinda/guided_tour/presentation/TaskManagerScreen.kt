@@ -1,7 +1,6 @@
 package nl.codingwithlinda.guided_tour.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -20,6 +19,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,19 +28,21 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -49,16 +52,17 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import nl.codingwithlinda.guided_tour.presentation.theme.TaskManagerTheme
+import nl.codingwithlinda.guided_tour.presentation.design_system.SpeechBubbleShape
+import nl.codingwithlinda.guided_tour.presentation.design_system.theme.TaskManagerTheme
 import org.koin.androidx.compose.koinViewModel
 
 // ── Root ─────────────────────────────────────────────────────────────────────
@@ -90,8 +94,8 @@ fun TaskManagerScreen(
     var taskListBounds  by remember { mutableStateOf<Rect?>(null) }
     var fabBounds       by remember { mutableStateOf<Rect?>(null) }
 
-    var selectedFilter by remember { mutableStateOf("All") }
     val filters = listOf("All", "Active", "Completed")
+    var selectedFilterIndex by remember { mutableIntStateOf(0) }
 
     Box(
         modifier = Modifier
@@ -150,22 +154,24 @@ fun TaskManagerScreen(
                     .fillMaxSize()
                     .padding(innerPadding),
             ) {
-                // Filter row
-                Row(
+                // Filter tabs
+                TabRow(
+                    selectedTabIndex = selectedFilterIndex,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(horizontal = 16.dp, vertical = 10.dp)
                         .onGloballyPositioned { coords ->
                             filterRowBounds = coords.boundsInRoot()
                         },
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    filters.forEach { filter ->
-                        FilterChip(
-                            label = filter,
-                            selected = filter == selectedFilter,
-                            onClick = { selectedFilter = filter },
+                    filters.forEachIndexed { index, label ->
+                        Tab(
+                            selected = selectedFilterIndex == index,
+                            onClick = { selectedFilterIndex = index },
+                            text = { Text(label,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onBackground)
+                                   },
                         )
                     }
                 }
@@ -206,6 +212,7 @@ fun TaskManagerScreen(
             StartTourDialog(
                 onSkip = { onAction(TourAction.Skip) },
                 onStartTour = { onAction(TourAction.StartTour) },
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
 
@@ -228,52 +235,34 @@ fun TaskManagerScreen(
     }
 }
 
-// ── Filter chip ──────────────────────────────────────────────────────────────
-
-@Composable
-private fun FilterChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val bg   = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-    val text = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(bg)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            color = text,
-            fontSize = 13.sp,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-        )
-    }
-}
-
 // ── Start tour dialog ────────────────────────────────────────────────────────
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun StartTourDialog(
     onSkip: () -> Unit,
     onStartTour: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Dialog(
-        onDismissRequest = { /* blocked intentionally */ },
-        properties = DialogProperties(
-            dismissOnClickOutside = false,
-            dismissOnBackPress = false,
-        ),
+    val density = LocalDensity.current
+    val containerHeight = with(density) {
+        LocalWindowInfo.current.containerSize.height.toDp()
+    }
+    val isCompactHeight = containerHeight < 480.dp
+    val sizeModifier = if (isCompactHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth()
+
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.15f))
+        ,
     ) {
         Card(
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(8.dp),
+            modifier = sizeModifier.align(Alignment.BottomCenter)
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -292,10 +281,13 @@ private fun StartTourDialog(
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = onSkip) {
+                    OutlinedButton(
+                        onClick = onSkip,
+                        modifier = Modifier.weight(1f)
+                    ) {
                         Text(
                             text = "Skip",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -308,6 +300,7 @@ private fun StartTourDialog(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text(text = "Start Tour")
                     }
@@ -374,7 +367,10 @@ private fun TourOverlay(
                     .offset { IntOffset(tooltipX.toInt(), tooltipY.toInt()) }
                     .width(with(density) { tooltipWidthPx.toDp() }),
             ) {
-                TourTooltip(step = step, onAction = onAction)
+                TourTooltip(step = step,
+                    onAction = onAction,
+                    tipOffset = Offset(tooltipX, tooltipY)
+                )
             }
         }
     }
@@ -405,9 +401,13 @@ private fun DrawScope.drawHighlightCutout(
 private fun TourTooltip(
     step: TourStep,
     onAction: (TourAction) -> Unit,
+    tipOffset: Offset
 ) {
     Card(
-        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier,
+        shape = SpeechBubbleShape(
+           tipOffset = tipOffset
+        ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(12.dp),
     ) {
@@ -451,12 +451,13 @@ private fun TourTooltip(
 
 // ── Previews ─────────────────────────────────────────────────────────────────
 
+@PreviewScreenSizes
 @Preview(showBackground = true)
 @Composable
 private fun TaskManagerScreenPreview() {
     TaskManagerTheme {
         TaskManagerScreen(
-            state = TourState(showDialog = false, currentStep = null),
+            state = TourState(showDialog = false, currentStep = TourStep.SEARCH),
             onAction = {},
         )
     }

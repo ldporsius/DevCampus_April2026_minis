@@ -1,4 +1,4 @@
-package nl.codingwithlinda.guided_tour.presentation.theme
+package nl.codingwithlinda.guided_tour.presentation.design_system.theme
 
 import androidx.compose.ui.graphics.Color
 
