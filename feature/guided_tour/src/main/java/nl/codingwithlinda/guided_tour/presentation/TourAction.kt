@@ -5,4 +5,6 @@ sealed interface TourAction {
     data object StartTour : TourAction
     data object NextStep : TourAction
     data object Finish : TourAction
+
+    data object Reset: TourAction
 }

@@ -9,14 +9,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.codingwithlinda.adaptivedesigntokens.core.designsystem.theme.AdaptiveDesignTokensTheme
 import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentation.NoteRoot
 import nl.codingwithlinda.adaptivedesigntokens.feature.editing_status.presentation.theme.EditingStatusTheme
@@ -25,52 +31,39 @@ import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentatio
 import nl.codingwithlinda.adaptivedesigntokens.feature.ready_to_type.presentation.theme.ReadyToTypeTheme
 import nl.codingwithlinda.cloud_photo_upload.presentation.PhotoBackupRoot
 import nl.codingwithlinda.guided_tour.presentation.TaskManagerRoot
+import org.koin.androidx.compose.koinViewModel
+
+private val tabTitles = listOf("Profile", "Ready to Type", "Note", "Photo", "Tour")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            var selectedTab by remember { mutableIntStateOf(0) }
+            val viewModel: MainViewModel = koinViewModel()
+            val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
 
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .safeContentPadding(),
             ) {
                 AdaptiveDesignTokensTheme {
-                    TabRow(
+                    ScrollableTabRow(
                         selectedTabIndex = selectedTab,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Tab(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0 },
-                            text = { Text("Profile") },
-                        )
-                        Tab(
-                            selected = selectedTab == 1,
-                            onClick = { selectedTab = 1 },
-                            text = { Text("Ready to Type") },
-                        )
-                        Tab(
-                            selected = selectedTab == 2,
-                            onClick = { selectedTab = 2 },
-                            text = { Text("Note") },
-                        )
-                        Tab(
-                            selected = selectedTab == 3,
-                            onClick = { selectedTab = 3 },
-                            text = { Text("Photo") },
-                        )
-                        Tab(
-                            selected = selectedTab == 4,
-                            onClick = { selectedTab = 4 },
-                            text = { Text("Tour") },
-                        )
+                        tabTitles.forEachIndexed { index, title ->
+                            Tab(
+                                selected = selectedTab == index,
+                                onClick = { viewModel.selectTab(index) },
+                                text = { AutoSizeTabText(text = title) },
+                            )
+                        }
                     }
                 }
 
-                Box(modifier = androidx.compose.ui.Modifier.weight(1f)) {
+                Box(modifier = Modifier.weight(1f)) {
                     when (selectedTab) {
                         0 -> AdaptiveDesignTokensTheme { ProfileRoot() }
                         1 -> ReadyToTypeTheme { ReadyToTypeRoot() }
@@ -82,4 +75,25 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+@Composable
+private fun AutoSizeTabText(
+    text: String,
+    maxFontSize: TextUnit = 24.sp,
+) {
+    var fontSize by remember(text) { mutableStateOf(maxFontSize) }
+
+    Text(
+        text = text,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Visible,
+        style = TextStyle(fontSize = fontSize),
+        onTextLayout = { result ->
+            if (result.didOverflowWidth) {
+                fontSize *= 0.9f
+            }
+        },
+    )
 }

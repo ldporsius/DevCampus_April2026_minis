@@ -19,9 +19,9 @@ class TourPreferencesDataSource(private val context: Context) {
         prefs[TOUR_DONE] ?: false
     }
 
-    suspend fun setTourDone() {
+    suspend fun setTourDone(done: Boolean) {
         context.tourDataStore.edit { prefs ->
-            prefs[TOUR_DONE] = true
+            prefs[TOUR_DONE] = done
         }
     }
 }

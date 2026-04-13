@@ -10,16 +10,33 @@ import nl.codingwithlinda.guided_tour.di.guidedTourModule
 import androidx.work.Configuration
 import androidx.work.WorkManager
 import androidx.work.WorkerFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import nl.codingwithlinda.guided_tour.data.TourPreferencesDataSource
+import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.GlobalContext
+import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.module
+
+private val appModule = module {
+    single { (androidApplication() as App).applicationScope }
+    viewModelOf(::MainViewModel)
+}
 
 class App : Application() {
+
+    val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
         startKoin {
             androidContext(this@App)
             modules(
+                appModule,
                 profileDataModule,
                 profilePresentationModule,
                 readyToTypePresentationModule,
@@ -36,5 +53,9 @@ class App : Application() {
                 .setWorkerFactory(factory)
                 .build()
         )
+
+        applicationScope.launch {
+            TourPreferencesDataSource(this@App).setTourDone(false)
+        }
     }
 }
