@@ -362,14 +362,31 @@ private fun TourOverlay(
             val tooltipX = (elementCenterX - tooltipWidthPx / 2f)
                 .coerceIn(marginPx, screenWidthPx - tooltipWidthPx - marginPx)
 
+            val overlapLeft    = maxOf(hLeft, tooltipX)
+            val overlapRight   = minOf(hLeft + hWidth, tooltipX + tooltipWidthPx)
+            val overlapCenterX = (overlapLeft + overlapRight) / 2f
+            val tipOffsetX     = overlapCenterX - tooltipX
+
+            val isToolTipBelowHighlight = tooltipY > highlightBounds.bottom
+
+
+            // SpeechBubbleShape keeps rect height = size.height - tipSize.height (24px),
+            // so the tip fits within the composable bounds in both orientations.
+            // Tip-at-top  (rotation 0°):   apex at y=0,               tipYoffset = 0
+            // Tip-at-bottom (rotation 180°): apex at y=tooltipHeightPx, tipYoffset = tooltipHeightPx
+            val tipYoffset = if (isToolTipBelowHighlight) 0f else tooltipHeightPx
+
             Box(
                 modifier = Modifier
                     .offset { IntOffset(tooltipX.toInt(), tooltipY.toInt()) }
-                    .width(with(density) { tooltipWidthPx.toDp() }),
+                    .width(with(density) { tooltipWidthPx.toDp() })
+                    .height(with(density) { tooltipHeightPx.toDp() }),
             ) {
-                TourTooltip(step = step,
+                TourTooltip(
+                    step = step,
                     onAction = onAction,
-                    tipOffset = Offset(tooltipX, tooltipY)
+                    tipOffset = Offset(tipOffsetX, tipYoffset),
+                    tipRotation = if (isToolTipBelowHighlight) 0f else 180f,
                 )
             }
         }
@@ -401,12 +418,14 @@ private fun DrawScope.drawHighlightCutout(
 private fun TourTooltip(
     step: TourStep,
     onAction: (TourAction) -> Unit,
-    tipOffset: Offset
+    tipOffset: Offset,
+    tipRotation: Float = 0f,
 ) {
     Card(
         modifier = Modifier,
         shape = SpeechBubbleShape(
-           tipOffset = tipOffset
+           tipOffset = tipOffset,
+            tipRotation= tipRotation
         ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(12.dp),
@@ -451,10 +470,9 @@ private fun TourTooltip(
 
 // ── Previews ─────────────────────────────────────────────────────────────────
 
-@PreviewScreenSizes
 @Preview(showBackground = true)
 @Composable
-private fun TaskManagerScreenPreview() {
+private fun TaskManagerScreenPreviewSearch() {
     TaskManagerTheme {
         TaskManagerScreen(
             state = TourState(showDialog = false, currentStep = TourStep.SEARCH),
@@ -463,6 +481,39 @@ private fun TaskManagerScreenPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun TaskManagerScreenPreviewFilters() {
+    TaskManagerTheme {
+        TaskManagerScreen(
+            state = TourState(showDialog = false, currentStep = TourStep.FILTERS),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TaskManagerScreenPreviewTaskList() {
+    TaskManagerTheme {
+        TaskManagerScreen(
+            state = TourState(showDialog = false, currentStep = TourStep.TASK_LIST),
+            onAction = {},
+        )
+    }
+}
+
+
+@Preview(showBackground = true)
+@Composable
+private fun TaskManagerScreenPreviewAddButton() {
+    TaskManagerTheme {
+        TaskManagerScreen(
+            state = TourState(showDialog = false, currentStep = TourStep.ADD_BUTTON),
+            onAction = {},
+        )
+    }
+}
 @Preview(showBackground = true)
 @Composable
 private fun StartTourDialogPreview() {
