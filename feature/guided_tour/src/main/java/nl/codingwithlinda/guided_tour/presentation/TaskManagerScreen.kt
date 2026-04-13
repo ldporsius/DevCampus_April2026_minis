@@ -42,7 +42,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
@@ -56,7 +55,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -171,7 +170,7 @@ fun TaskManagerScreen(
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onBackground)
-                                   },
+                            },
                         )
                     }
                 }
@@ -183,17 +182,22 @@ fun TaskManagerScreen(
                         .padding(16.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        .onGloballyPositioned { coords ->
-                            taskListBounds = coords.boundsInRoot()
-                        },
-                    contentAlignment = Alignment.Center,
+                        ,
+                    contentAlignment = Alignment.TopCenter,
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        modifier = Modifier
+                            .onGloballyPositioned { coords ->
+                                taskListBounds = coords.boundsInRoot()
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
                         Text(
                             text = "No tasks yet",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 18.sp,
+
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
@@ -336,57 +340,33 @@ private fun TourOverlay(
         }
 
         if (rootBounds != null && highlightBounds != null) {
-            val screenWidthPx  = with(density) { maxWidth.toPx() }
-            val screenHeightPx = with(density) { maxHeight.toPx() }
+            val tooltipWidthPx  = with(density) { 240.dp.toPx() }
+            val tooltipHeightPx = with(density) { 140.dp.toPx() }
 
-            val hLeft   = highlightBounds.left   - rootBounds.left
-            val hTop    = highlightBounds.top     - rootBounds.top
-            val hWidth  = highlightBounds.width
-            val hHeight = highlightBounds.height
-
-            val tooltipWidthPx     = with(density) { 260.dp.toPx() }
-            val tooltipHeightPx    = with(density) { 140.dp.toPx() }
-            val marginPx           = with(density) { 12.dp.toPx() }
-            val highlightPaddingPx = with(density) { 8.dp.toPx() }
-
-            val elementBottom = hTop + hHeight + highlightPaddingPx
-            val spaceBelow = screenHeightPx - elementBottom
-
-            val tooltipY = if (spaceBelow >= tooltipHeightPx + marginPx) {
-                elementBottom + marginPx
-            } else {
-                (hTop - highlightPaddingPx - marginPx - tooltipHeightPx).coerceAtLeast(marginPx)
-            }
-
-            val elementCenterX = hLeft + hWidth / 2f
-            val tooltipX = (elementCenterX - tooltipWidthPx / 2f)
-                .coerceIn(marginPx, screenWidthPx - tooltipWidthPx - marginPx)
-
-            val overlapLeft    = maxOf(hLeft, tooltipX)
-            val overlapRight   = minOf(hLeft + hWidth, tooltipX + tooltipWidthPx)
-            val overlapCenterX = (overlapLeft + overlapRight) / 2f
-            val tipOffsetX     = overlapCenterX - tooltipX
-
-            val isToolTipBelowHighlight = tooltipY > highlightBounds.bottom
-
-
-            // SpeechBubbleShape keeps rect height = size.height - tipSize.height (24px),
-            // so the tip fits within the composable bounds in both orientations.
-            // Tip-at-top  (rotation 0°):   apex at y=0,               tipYoffset = 0
-            // Tip-at-bottom (rotation 180°): apex at y=tooltipHeightPx, tipYoffset = tooltipHeightPx
-            val tipYoffset = if (isToolTipBelowHighlight) 0f else tooltipHeightPx
+            val layout = computeTooltipLayout(
+                screenWidthPx   = with(density) { maxWidth.toPx() },
+                screenHeightPx  = with(density) { maxHeight.toPx() },
+                hLeft           = highlightBounds.left - rootBounds.left,
+                hTop            = highlightBounds.top  - rootBounds.top,
+                hWidth          = highlightBounds.width,
+                hHeight         = highlightBounds.height,
+                tooltipWidthPx  = tooltipWidthPx,
+                tooltipHeightPx = tooltipHeightPx,
+                marginPx        = with(density) { 12.dp.toPx() },
+                highlightGapPx  = with(density) { 20.dp.toPx() },
+            )
 
             Box(
                 modifier = Modifier
-                    .offset { IntOffset(tooltipX.toInt(), tooltipY.toInt()) }
+                    .offset { IntOffset(layout.offset.x.toInt(), layout.offset.y.toInt()) }
                     .width(with(density) { tooltipWidthPx.toDp() })
-                    .height(with(density) { tooltipHeightPx.toDp() }),
+                    //.height(with(density) { tooltipHeightPx.toDp() }),
             ) {
                 TourTooltip(
-                    step = step,
-                    onAction = onAction,
-                    tipOffset = Offset(tipOffsetX, tipYoffset),
-                    tipRotation = if (isToolTipBelowHighlight) 0f else 180f,
+                    step            = step,
+                    onAction        = onAction,
+                    placement       = layout.placement,
+                    tipEdgeFraction = layout.tipEdgeFraction,
                 )
             }
         }
@@ -418,14 +398,14 @@ private fun DrawScope.drawHighlightCutout(
 private fun TourTooltip(
     step: TourStep,
     onAction: (TourAction) -> Unit,
-    tipOffset: Offset,
-    tipRotation: Float = 0f,
+    placement: TooltipPlacement,
+    tipEdgeFraction: Float,
 ) {
     Card(
         modifier = Modifier,
         shape = SpeechBubbleShape(
-           tipOffset = tipOffset,
-            tipRotation= tipRotation
+            placement       = placement,
+            tipEdgeFraction = tipEdgeFraction,
         ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(12.dp),
@@ -435,6 +415,7 @@ private fun TourTooltip(
                 .fillMaxWidth()
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = "Step ${step.stepNumber}/${step.total}",
@@ -452,14 +433,22 @@ private fun TourTooltip(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
             ) {
+                val buttonColors = if (step.isLast) ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                )
+                else{
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        contentColor = MaterialTheme.colorScheme.onBackground,
+                    )
+                }
                 Button(
                     onClick = {
                         onAction(if (step.isLast) TourAction.Finish else TourAction.NextStep)
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = buttonColors,
                 ) {
                     Text(text = if (step.isLast) "Finish" else "Next")
                 }
