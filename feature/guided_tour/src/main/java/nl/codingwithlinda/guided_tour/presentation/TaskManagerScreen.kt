@@ -1,17 +1,25 @@
 package nl.codingwithlinda.guided_tour.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,19 +50,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -87,7 +100,7 @@ fun TaskManagerScreen(
     state: TourState,
     onAction: (TourAction) -> Unit,
 ) {
-    var rootBounds      by remember { mutableStateOf<Rect?>(null) }
+    var rootBounds      by remember { mutableStateOf<Rect>(Rect(0f, 0f, 480f, 800f)) }
     var searchBounds    by remember { mutableStateOf<Rect?>(null) }
     var filterRowBounds by remember { mutableStateOf<Rect?>(null) }
     var taskListBounds  by remember { mutableStateOf<Rect?>(null) }
@@ -99,9 +112,18 @@ fun TaskManagerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onGloballyPositioned { rootBounds = it.boundsInRoot() },
+            .safeContentPadding()
+            .systemBarsPadding()
+            .onGloballyPositioned {
+                rootBounds = it.boundsInRoot()
+                println("--- TASK MANAGER SCREEN --- ROOT BOUNDS 1 --- $rootBounds")
+            }
+        ,
     ) {
         Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+            ,
             containerColor = MaterialTheme.colorScheme.background,
             topBar = {
                 TopAppBar(
@@ -111,6 +133,9 @@ fun TaskManagerScreen(
                             color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
+                            modifier = Modifier.clickable{
+                                onAction(TourAction.Reset)
+                            }
                         )
                     },
                     actions = {
@@ -138,8 +163,11 @@ fun TaskManagerScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.onGloballyPositioned { coords ->
-                        fabBounds = coords.boundsInRoot()
-                    },
+
+                    }
+                        .onPlaced(){coords ->
+                            fabBounds = coords.boundsInRoot()
+                        },
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -151,7 +179,8 @@ fun TaskManagerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                ,
             ) {
                 // Filter tabs
                 TabRow(
@@ -319,23 +348,29 @@ private fun StartTourDialog(
 @Composable
 private fun TourOverlay(
     step: TourStep,
-    rootBounds: Rect?,
+    rootBounds: Rect,
     highlightBounds: Rect?,
     onAction: (TourAction) -> Unit,
 ) {
     val scrimColor = MaterialTheme.colorScheme.scrim
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier
+        .size(rootBounds.size.width.dp, rootBounds.size.height.dp)
+        .safeContentPadding()
+        .systemBarsPadding()
+
+    ) {
         val density = LocalDensity.current
+        val highlightPadding = 8.dp
 
         androidx.compose.foundation.Canvas(
             modifier = Modifier
-                .fillMaxSize()
+                .size(maxWidth, maxHeight)
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
         ) {
             drawRect(scrimColor)
             if (rootBounds != null && highlightBounds != null) {
-                drawHighlightCutout(rootBounds, highlightBounds)
+                drawHighlightCutout(highlightPadding, rootBounds, highlightBounds)
             }
         }
 
@@ -343,30 +378,38 @@ private fun TourOverlay(
             val tooltipWidthPx  = with(density) { 240.dp.toPx() }
             val tooltipHeightPx = with(density) { 140.dp.toPx() }
 
+            val navBarPx = WindowInsets.navigationBars.getBottom(density).toFloat()
+            val tipLength = with(density) { 16.dp.toPx() }
+            val tipBase   = with(density) { 24.dp.toPx() }
+
+
             val layout = computeTooltipLayout(
                 screenWidthPx   = with(density) { maxWidth.toPx() },
                 screenHeightPx  = with(density) { maxHeight.toPx() },
                 hLeft           = highlightBounds.left - rootBounds.left,
                 hTop            = highlightBounds.top  - rootBounds.top,
                 hWidth          = highlightBounds.width,
-                hHeight         = highlightBounds.height,
+                hHeight         = with(density){highlightBounds.height + highlightPadding.toPx()},
                 tooltipWidthPx  = tooltipWidthPx,
-                tooltipHeightPx = tooltipHeightPx,
+                tooltipHeightPx = tooltipHeightPx ,
                 marginPx        = with(density) { 12.dp.toPx() },
                 highlightGapPx  = with(density) { 20.dp.toPx() },
+                apexY           = tipLength,
             )
 
             Box(
                 modifier = Modifier
                     .offset { IntOffset(layout.offset.x.toInt(), layout.offset.y.toInt()) }
-                    .width(with(density) { tooltipWidthPx.toDp() })
-                    //.height(with(density) { tooltipHeightPx.toDp() }),
+                    .width(with(density) { tooltipWidthPx.toDp()})
+
             ) {
                 TourTooltip(
                     step            = step,
                     onAction        = onAction,
                     placement       = layout.placement,
                     tipEdgeFraction = layout.tipEdgeFraction,
+                    tipLength       = tipLength,
+                    tipBase         = tipBase,
                 )
             }
         }
@@ -374,10 +417,11 @@ private fun TourOverlay(
 }
 
 private fun DrawScope.drawHighlightCutout(
+    padding: Dp,
     rootBounds: Rect,
     highlightBounds: Rect,
 ) {
-    val padding = 8.dp.toPx()
+    val padding = padding.toPx()
     val left   = highlightBounds.left  - rootBounds.left - padding
     val top    = highlightBounds.top   - rootBounds.top  - padding
     val width  = highlightBounds.width  + padding * 2
@@ -400,12 +444,16 @@ private fun TourTooltip(
     onAction: (TourAction) -> Unit,
     placement: TooltipPlacement,
     tipEdgeFraction: Float,
+    tipLength: Float,
+    tipBase: Float
 ) {
     Card(
-        modifier = Modifier,
+        modifier = Modifier.fillMaxWidth(),
         shape = SpeechBubbleShape(
             placement       = placement,
             tipEdgeFraction = tipEdgeFraction,
+            tipLength = tipLength,
+            tipBase = tipBase
         ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(12.dp),
@@ -493,7 +541,9 @@ private fun TaskManagerScreenPreviewTaskList() {
 }
 
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, showSystemUi = true,
+    device = "spec:parent=pixel_5,navigation=buttons"
+)
 @Composable
 private fun TaskManagerScreenPreviewAddButton() {
     TaskManagerTheme {

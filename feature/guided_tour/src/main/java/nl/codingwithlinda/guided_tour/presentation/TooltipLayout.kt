@@ -34,11 +34,15 @@ data class TooltipLayout(
 
 /**
  * Picks the best placement and computes the tooltip position so it stays on screen
- * and the tip aligns with the center of the overlap between tooltip and highlight.
+ * and the tip aligns with the center of the highlighted element.
  *
  * All coordinates are **overlay-local px** (origin = top-left corner of the overlay).
  *
- * Priority: Below → Above → End (right) → Start (left).
+ * Each placement candidate clamps only the axis that is free to move, then checks
+ * the single axis that is truly constrained for that direction.  The first candidate
+ * whose constrained axis fits wins — no cascading conditions, no safety guard needed.
+ *
+ * Priority: Start → Below → Above → End → fallback Above (clamped).
  *
  * @param marginPx       Minimum distance the tooltip must keep from any screen edge.
  * @param highlightGapPx Gap between the highlight's edge and the nearest tooltip edge.
@@ -54,75 +58,97 @@ fun computeTooltipLayout(
     tooltipHeightPx: Float,
     marginPx: Float,
     highlightGapPx: Float,
+    apexY: Float,
 ): TooltipLayout {
-    val hRight  = hLeft + hWidth
-    val hBottom = hTop  + hHeight
+    val hRight   = hLeft  + hWidth
+    val hBottom  = hTop   + hHeight
+    val hCenterX = hLeft  + hWidth  / 2f
+    val hCenterY = hTop   + hHeight / 2f
 
-    // Available space outside the (padded) highlight on each side
-    val spaceBelow = screenHeightPx - hBottom - highlightGapPx
-    val spaceAbove = hTop - highlightGapPx
-    val spaceEnd   = screenWidthPx  - hRight  - highlightGapPx
-    val spaceStart = hLeft          - highlightGapPx
+    // ── Helpers ────────────────────────────────────────────────────────────────
 
-    val placement = when {
-        spaceStart >= tooltipWidthPx  + marginPx -> TooltipPlacement.Start
-        spaceBelow >= tooltipHeightPx + marginPx -> TooltipPlacement.Below
-        spaceAbove >= tooltipHeightPx + marginPx -> TooltipPlacement.Above
-        spaceEnd   >= tooltipWidthPx  + marginPx -> TooltipPlacement.End
-        else                                      -> TooltipPlacement.Start
+    /** X that horizontally centres the tooltip on the highlight, clamped to screen. */
+    fun clampedCenterX() = (hCenterX - tooltipWidthPx / 2f)
+        .coerceIn(marginPx, screenWidthPx - tooltipWidthPx - marginPx)
+
+    /** Y that vertically centres the tooltip on the highlight, clamped to screen. */
+    fun clampedCenterY() = (hCenterY - tooltipHeightPx / 2f)
+        .coerceIn(marginPx, screenHeightPx - tooltipHeightPx - marginPx)
+
+    /** Tip fraction when the tooltip sits left or right of the highlight (vertical edge). */
+    fun vTipFraction(tooltipY: Float) = ((hCenterY - tooltipY) / tooltipHeightPx).coerceIn(0f, 1f)
+
+    /** Tip fraction when the tooltip sits above or below the highlight (horizontal edge). */
+    fun hTipFraction(tooltipX: Float) = ((hCenterX - tooltipX) / tooltipWidthPx).coerceIn(0f, 1f)
+
+    // ── Candidate list ─────────────────────────────────────────────────────────
+    //
+    // Rule: each placement constrains ONLY ONE axis.
+    //   • Start / End  → constrained axis is X;  Y is free (clamped).
+    //   • Above / Below → constrained axis is Y;  X is free (clamped).
+    //
+    // The candidate returns a TooltipLayout when its constrained axis fits,
+    // or null when it does not.  Order of the list = placement priority.
+
+    val candidates: List<() -> TooltipLayout?> = listOf(
+
+        // Start — tooltip to the LEFT of the highlight, tip on its right edge.
+        // Only viable when hCenterY is inside the usable screen; otherwise the
+        // clamped y would push the tip to an extreme fraction (0 or 1).
+        {
+            val x = hLeft - highlightGapPx - tooltipWidthPx - marginPx - apexY
+            val y = clampedCenterY()
+            if (x >= marginPx && hBottom in marginPx..(screenHeightPx - marginPx))
+                TooltipLayout(Offset(x, y), TooltipPlacement.Start, vTipFraction(y))
+            else null
+        },
+
+        // Below — tooltip BELOW the highlight, tip on its top edge
+        {
+            val x = clampedCenterX()
+            val y = hBottom + highlightGapPx
+            if (y + tooltipHeightPx <= screenHeightPx - marginPx)
+                TooltipLayout(Offset(x, y), TooltipPlacement.Below, hTipFraction(x))
+            else null
+        },
+
+        // Above — tooltip ABOVE the highlight, tip on its bottom edge
+        {
+            val x = clampedCenterX()
+            val y = hTop - highlightGapPx - tooltipHeightPx - marginPx
+            if (y >= marginPx)
+                TooltipLayout(Offset(x, y), TooltipPlacement.Above, hTipFraction(x))
+            else null
+        },
+
+        // End — tooltip to the RIGHT of the highlight, tip on its left edge.
+        // Same vertical-center guard as Start.
+        {
+            val x = hRight + highlightGapPx
+            val y = clampedCenterY()
+            if (x + tooltipWidthPx <= screenWidthPx - marginPx && hCenterY in marginPx..(screenHeightPx - marginPx))
+                TooltipLayout(Offset(x, y), TooltipPlacement.End, vTipFraction(y))
+            else null
+        },
+    )
+
+    // ── Selection ──────────────────────────────────────────────────────────────
+
+    // First candidate whose constrained axis fits wins.
+    // Fallback: Above, clamped — only reached when every side has less space than
+    // the tooltip needs (e.g. a very small screen or an unusually large tooltip).
+
+    println("--- TOOLTIP LAYOUT --- clampedCenterX() = ${clampedCenterX()}, clampedCenterY() = ${clampedCenterY()}, hCenterX = $hCenterX, hCenterY = $hCenterY")
+    println("--- TOOLTIP LAYOUT --- hLeft = $hLeft, hTop = $hTop, hWidth = $hWidth, hHeight = $hHeight")
+    println("--- TOOLTIP LAYOUT --- tooltipWidthPx = $tooltipWidthPx, tooltipHeightPx = $tooltipHeightPx")
+    println("--- TOOLTIP LAYOUT --- marginPx = $marginPx, highlightGapPx = $highlightGapPx, screenWidthPx = $screenWidthPx, screenHeightPx = $screenHeightPx")
+    println("--- TOOLTIP LAYOUT --- hTipFraction(x) = ${hTipFraction(clampedCenterX())}, vTipFraction(y) = ${vTipFraction(clampedCenterY())}")
+
+    val result = candidates.firstNotNullOfOrNull { it() } ?: run {
+        val x = clampedCenterX()
+        val y = (hTop - highlightGapPx - tooltipHeightPx).coerceAtLeast(marginPx)
+        TooltipLayout(Offset(x, y), TooltipPlacement.Above, hTipFraction(x))
     }
-
-    return when (placement) {
-        TooltipPlacement.Below, TooltipPlacement.Above -> {
-            val tooltipY = if (placement == TooltipPlacement.Below) {
-                hBottom + highlightGapPx
-            } else {
-                (hTop - highlightGapPx - tooltipHeightPx).coerceAtLeast(marginPx)
-            }
-            val tooltipX = (hLeft + hWidth / 2f - tooltipWidthPx / 2f)
-                .coerceIn(marginPx, screenWidthPx - tooltipWidthPx - marginPx)
-
-            TooltipLayout(
-                offset          = Offset(tooltipX, tooltipY),
-                placement       = placement,
-                tipEdgeFraction = xOverlapFraction(hLeft, hRight, tooltipX, tooltipWidthPx),
-            )
-        }
-
-        TooltipPlacement.End, TooltipPlacement.Start -> {
-            val tooltipX = if (placement == TooltipPlacement.End) {
-                hRight + highlightGapPx
-            } else {
-                (hLeft - highlightGapPx - tooltipWidthPx).coerceAtLeast(marginPx)
-            }
-            val tooltipY = (hTop + hHeight / 2f - tooltipHeightPx / 2f)
-                .coerceIn(marginPx, screenHeightPx - tooltipHeightPx - marginPx)
-
-            TooltipLayout(
-                offset          = Offset(tooltipX, tooltipY),
-                placement       = placement,
-                tipEdgeFraction = yOverlapFraction(hTop, hBottom, tooltipY, tooltipHeightPx),
-            )
-        }
-    }
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** 0..1 fraction where the X-overlap center sits within the tooltip's width. */
-private fun xOverlapFraction(
-    hLeft: Float, hRight: Float,
-    tooltipX: Float, tooltipWidth: Float,
-): Float {
-    val overlapCenter = (maxOf(hLeft, tooltipX) + minOf(hRight, tooltipX + tooltipWidth)) / 2f
-    return ((overlapCenter - tooltipX) / tooltipWidth).coerceIn(0f, 1f)
-}
-
-/** 0..1 fraction where the Y-overlap center sits within the tooltip's height. */
-private fun yOverlapFraction(
-    hTop: Float, hBottom: Float,
-    tooltipY: Float, tooltipHeight: Float,
-): Float {
-    val overlapCenter = (maxOf(hTop, tooltipY) + minOf(hBottom, tooltipY + tooltipHeight)) / 2f
-    return ((overlapCenter - tooltipY) / tooltipHeight).coerceIn(0f, 1f)
+    println("--- TOOLTIP LAYOUT RESULT --- placement=${result.placement}, offset=${result.offset}, tipFraction=${result.tipEdgeFraction}")
+    return result
 }

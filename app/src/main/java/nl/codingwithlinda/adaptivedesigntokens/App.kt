@@ -54,8 +54,5 @@ class App : Application() {
                 .build()
         )
 
-        applicationScope.launch {
-            TourPreferencesDataSource(this@App).setTourDone(false)
-        }
     }
 }

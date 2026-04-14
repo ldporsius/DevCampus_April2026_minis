@@ -2,7 +2,6 @@ package nl.codingwithlinda.guided_tour.presentation.design_system
 
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
@@ -10,7 +9,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
-import androidx.compose.ui.unit.dp
 import nl.codingwithlinda.guided_tour.presentation.TooltipPlacement
 
 /**
@@ -30,6 +28,9 @@ import nl.codingwithlinda.guided_tour.presentation.TooltipPlacement
 class SpeechBubbleShape(
     private val placement: TooltipPlacement,
     private val tipEdgeFraction: Float = 0.5f,
+    val tipLength: Float,  // how far the tip protrudes from the card edge
+    val tipBase: Float   // width of the tip's base along the edge
+
 ) : Shape {
 
     override fun createOutline(
@@ -37,26 +38,22 @@ class SpeechBubbleShape(
         layoutDirection: LayoutDirection,
         density: Density,
     ): Outline {
-        val tipLength = 24f   // how far the tip protrudes from the card edge
-        val tipBase   = 36f   // width of the tip's base along the edge
 
         val path = when (placement) {
-            TooltipPlacement.Below -> verticalTipPath(
+            TooltipPlacement.Below -> topTipPath(
                 size, tipLength, tipBase,
                 tipCenterX = tipEdgeFraction * size.width,
-                tipAtTop   = true,
             )
-            TooltipPlacement.Above -> verticalTipPath(
+            TooltipPlacement.Above -> bottomTipPath(
                 size, tipLength, tipBase,
                 tipCenterX = tipEdgeFraction * size.width,
-                tipAtTop   = false,
             )
-            TooltipPlacement.End -> horizontalTipPath(
+            TooltipPlacement.End -> tipPointLeftPath(
                 size, tipLength, tipBase,
                 tipCenterY = tipEdgeFraction * size.height,
                 tipAtStart = true,
             )
-            TooltipPlacement.Start -> horizontalTipPath(
+            TooltipPlacement.Start -> tipPointRightPath(
                 size, tipLength, tipBase,
                 tipCenterY = tipEdgeFraction * size.height,
                 tipAtStart = false,
@@ -69,31 +66,92 @@ class SpeechBubbleShape(
 
 // ── Path builders ─────────────────────────────────────────────────────────────
 
-/** Card rect + tip pointing up (tipAtTop=true) or down from the rect. */
-private fun verticalTipPath(
+/** Single path: rounded rect with tip pointing down, all corners via quadraticBezierTo. */
+private fun bottomTipPath(
     size: Size,
     tipLength: Float,
     tipBase: Float,
     tipCenterX: Float,
-    tipAtTop: Boolean,
 ): Path = Path().apply {
-    // Rectangle occupies full width; tip reserves [tipLength] on one vertical end.
-    val rectTop    = if (tipAtTop) tipLength else 0f
-    val rectBottom = if (tipAtTop) size.height else size.height - tipLength
-    addRoundRect(RoundRect(left = 0f, top = rectTop, right = size.width, bottom = rectBottom, cornerRadius = CornerRadius(50f, 50f)))
-    //addRect(Rect(left = 0f, top = rectTop, right = size.width, bottom = rectBottom))
+    val r          = 50f
+    val rectTop    = 0f
+    val rectBottom = size.height
+    val apexY      = size.height + tipLength
+    val tipLeft    = tipCenterX - tipBase / 2
+    val tipRight   = tipCenterX + tipBase / 2
 
-    val apexY = if (tipAtTop) 0f        else size.height
-    val baseY = if (tipAtTop) tipLength else size.height - tipLength
-    addTriangle(
-        a    = Offset(tipCenterX - tipBase / 2f, baseY),
-        apex = Offset(tipCenterX,                apexY),
-        b    = Offset(tipCenterX + tipBase / 2f, baseY),
-    )
+    // Start just below the top-left corner
+    moveTo(0f, rectTop + r)
+
+    // Top-left corner
+    quadraticTo(0f, rectTop, r, rectTop)
+
+    // Top-right corner
+    lineTo(size.width - r, rectTop)
+    quadraticTo(size.width, rectTop, size.width, rectTop + r)
+
+    // Bottom-right corner
+    lineTo(size.width, rectBottom - r)
+    quadraticTo(size.width, rectBottom, tipRight, rectBottom)
+
+    //lineTo(tipRight, rectBottom)
+    // Right foot → apex
+    quadraticTo(tipCenterX , rectBottom, tipCenterX, apexY)
+    // Apex → left foot
+    quadraticTo(tipCenterX , rectBottom, tipLeft, rectBottom)
+
+
+    // Bottom-left corner
+    lineTo(r, rectBottom)
+    quadraticTo(0f, rectBottom, 0f, rectBottom - r)
+
+    close()
 }
 
-/** Card rect + tip pointing left (tipAtStart=true) or right from the rect. */
-private fun horizontalTipPath(
+private fun topTipPath(
+    size: Size,
+    tipLength: Float,
+    tipBase: Float,
+    tipCenterX: Float,
+): Path = Path().apply {
+    val r          = 50f
+    val rectTop    = 0f
+    val rectBottom = size.height
+    val apexY      = -tipLength
+    val tipLeft    = tipCenterX - tipBase / 2f
+    val tipRight   = tipCenterX + tipBase / 2f
+
+    // Start just below the top-left corner
+    moveTo(0f, rectTop + r)
+
+    // Top-left corner
+    quadraticTo(0f, rectTop, r, rectTop)
+
+    lineTo(tipLeft, rectTop)
+
+    // Left foot → apex (control at base-centre pulls the curve smooth)
+    quadraticTo(tipCenterX, rectTop, tipCenterX, apexY)
+    // Apex → right foot
+    quadraticTo(tipCenterX, rectTop, tipRight, rectTop)
+
+
+    // Top-right corner
+    lineTo(size.width - r, rectTop)
+    quadraticTo(size.width, rectTop, size.width, rectTop + r)
+
+    // Bottom-right corner
+    lineTo(size.width, rectBottom - r)
+    quadraticTo(size.width, rectBottom, size.width - r, rectBottom)
+
+    // Bottom-left corner
+    lineTo(r, rectBottom)
+    quadraticTo(0f, rectBottom, 0f, rectBottom - r)
+
+    close()
+}
+
+/** Card rect + tip pointing left from the rect. */
+private fun tipPointLeftPath(
     size: Size,
     tipLength: Float,
     tipBase: Float,
@@ -102,16 +160,63 @@ private fun horizontalTipPath(
 ): Path = Path().apply {
     // Rectangle occupies full height; tip reserves [tipLength] on one horizontal side.
     val rectLeft  = if (tipAtStart) tipLength else 0f
-    val rectRight = if (tipAtStart) size.width else size.width - tipLength
-    addRoundRect(RoundRect(left = rectLeft, top = 0f, right = rectRight, bottom = size.height, cornerRadius = CornerRadius(50f, 50f)))
+    val rectRight = if (tipAtStart) size.width else size.width
+    addRoundRect(RoundRect(left = 0f, top = 0f, right = rectRight, bottom = size.height, cornerRadius = CornerRadius(50f, 50f)))
 
-    val apexX = if (tipAtStart) 0f        else size.width
-    val baseX = if (tipAtStart) tipLength else size.width - tipLength
+    val apexX = if (tipAtStart) 0f        else size.width + tipLength
+    val baseX = if (tipAtStart) tipLength else size.width
     addTriangle(
         a    = Offset(baseX, tipCenterY - tipBase / 2f),
         apex = Offset(apexX, tipCenterY),
         b    = Offset(baseX, tipCenterY + tipBase / 2f),
     )
+}
+
+/** Card rect + tip pointing right from the rect. */
+private fun tipPointRightPath(
+    size: Size,
+    tipLength: Float,
+    tipBase: Float,
+    tipCenterY: Float,
+    tipAtStart: Boolean,
+): Path = Path().apply {
+    val r = 50f
+    val tipTop    = tipCenterY - tipBase / 2f
+    val tipBottom   = tipCenterY + tipBase / 2f
+
+    moveTo(0f, r)
+    //top-left corner
+    quadraticTo(0f, 0f, r, 0f)
+    lineTo(size.width - r, 0f)
+    //top-right corner
+    quadraticTo(size.width, 0f, size.width, tipTop)
+
+    //apex
+    lineTo(size.width + tipLength, tipCenterY )
+    lineTo(size.width , tipBottom)
+
+//    quadraticTo(size.width, 0f, size.width + tipLength, tipCenterY)
+//    // Apex → right foot
+//    quadraticTo(size.width, 0f, size.width + tipLength, tipCenterY)
+
+    lineTo(size.width, size.height - r)
+    // bottom-right corner
+    quadraticTo(size.width, size.height, size.width - r, size.height)
+
+    lineTo(r, size.height)
+    //bottom-left corner
+    quadraticTo(0f, size.height, 0f, size.height - r)
+
+
+    close()
+
+    val apexX = if (tipAtStart) 0f        else size.width + tipLength
+    val baseX = if (tipAtStart) tipLength else size.width
+    /* addTriangle(
+         a    = Offset(baseX, tipCenterY - tipBase / 2f),
+         apex = Offset(apexX, tipCenterY),
+         b    = Offset(baseX, tipCenterY + tipBase / 2f),
+     )*/
 }
 
 private fun Path.addTriangle(a: Offset, apex: Offset, b: Offset) {
