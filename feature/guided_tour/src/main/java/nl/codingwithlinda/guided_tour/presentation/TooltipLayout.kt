@@ -98,7 +98,7 @@ fun computeTooltipLayout(
         {
             val x = hLeft - highlightGapPx - tooltipWidthPx - marginPx - apexY
             val y = clampedCenterY()
-            if (x >= marginPx && hBottom in marginPx..(screenHeightPx - marginPx))
+            if (x >= marginPx && y in marginPx..(screenHeightPx - tooltipHeightPx))
                 TooltipLayout(Offset(x, y), TooltipPlacement.Start, vTipFraction(y))
             else null
         },

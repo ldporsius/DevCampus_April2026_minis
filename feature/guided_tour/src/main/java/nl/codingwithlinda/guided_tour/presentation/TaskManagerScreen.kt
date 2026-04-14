@@ -100,7 +100,7 @@ fun TaskManagerScreen(
     state: TourState,
     onAction: (TourAction) -> Unit,
 ) {
-    var rootBounds      by remember { mutableStateOf<Rect>(Rect(0f, 0f, 480f, 800f)) }
+    var rootBounds      by remember { mutableStateOf<Rect?>(null) }
     var searchBounds    by remember { mutableStateOf<Rect?>(null) }
     var filterRowBounds by remember { mutableStateOf<Rect?>(null) }
     var taskListBounds  by remember { mutableStateOf<Rect?>(null) }
@@ -112,8 +112,6 @@ fun TaskManagerScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .safeContentPadding()
-            .systemBarsPadding()
             .onGloballyPositioned {
                 rootBounds = it.boundsInRoot()
                 println("--- TASK MANAGER SCREEN --- ROOT BOUNDS 1 --- $rootBounds")
@@ -163,11 +161,8 @@ fun TaskManagerScreen(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.onGloballyPositioned { coords ->
-
-                    }
-                        .onPlaced(){coords ->
-                            fabBounds = coords.boundsInRoot()
-                        },
+                        fabBounds = coords.boundsInRoot()
+                    },
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -211,7 +206,7 @@ fun TaskManagerScreen(
                         .padding(16.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surface)
-                        ,
+                    ,
                     contentAlignment = Alignment.TopCenter,
                 ) {
                     Column(
@@ -220,14 +215,14 @@ fun TaskManagerScreen(
                                 taskListBounds = coords.boundsInRoot()
                             },
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
+                    ) {
                         Text(
                             text = "No tasks yet",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 18.sp,
 
-                        )
+                            )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Tap the + button to create your first task",
@@ -239,6 +234,7 @@ fun TaskManagerScreen(
                 }
             }
         }
+
 
         // Start tour dialog
         if (state.showDialog) {
@@ -348,17 +344,13 @@ private fun StartTourDialog(
 @Composable
 private fun TourOverlay(
     step: TourStep,
-    rootBounds: Rect,
+    rootBounds: Rect?,
     highlightBounds: Rect?,
     onAction: (TourAction) -> Unit,
 ) {
     val scrimColor = MaterialTheme.colorScheme.scrim
 
-    BoxWithConstraints(modifier = Modifier
-        .size(rootBounds.size.width.dp, rootBounds.size.height.dp)
-        .safeContentPadding()
-        .systemBarsPadding()
-
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()
     ) {
         val density = LocalDensity.current
         val highlightPadding = 8.dp
@@ -381,6 +373,8 @@ private fun TourOverlay(
             val navBarPx = WindowInsets.navigationBars.getBottom(density).toFloat()
             val tipLength = with(density) { 16.dp.toPx() }
             val tipBase   = with(density) { 24.dp.toPx() }
+            val cornerRadius = with(density) { 12.dp.toPx() }
+
 
 
             val layout = computeTooltipLayout(
@@ -410,6 +404,7 @@ private fun TourOverlay(
                     tipEdgeFraction = layout.tipEdgeFraction,
                     tipLength       = tipLength,
                     tipBase         = tipBase,
+                    cornerRadius    = cornerRadius,
                 )
             }
         }
@@ -445,7 +440,8 @@ private fun TourTooltip(
     placement: TooltipPlacement,
     tipEdgeFraction: Float,
     tipLength: Float,
-    tipBase: Float
+    tipBase: Float,
+    cornerRadius: Float,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -453,7 +449,8 @@ private fun TourTooltip(
             placement       = placement,
             tipEdgeFraction = tipEdgeFraction,
             tipLength = tipLength,
-            tipBase = tipBase
+            tipBase = tipBase,
+            cornerRadius
         ),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(12.dp),

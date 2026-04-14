@@ -37,8 +37,10 @@ private val tabTitles = listOf("Profile", "Ready to Type", "Note", "Photo", "Tou
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        super.onCreate(savedInstanceState)
+
         setContent {
             val viewModel: MainViewModel = koinViewModel()
             val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
@@ -46,7 +48,7 @@ class MainActivity : ComponentActivity() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .safeContentPadding(),
+                    .safeContentPadding()
             ) {
                 AdaptiveDesignTokensTheme {
                     ScrollableTabRow(
