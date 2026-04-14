@@ -58,6 +58,7 @@ fun computeTooltipLayout(
     tooltipHeightPx: Float,
     marginPx: Float,
     highlightGapPx: Float,
+    //highlightArea: Float,
     apexY: Float,
 ): TooltipLayout {
     val hRight   = hLeft  + hWidth
@@ -73,7 +74,7 @@ fun computeTooltipLayout(
 
     /** Y that vertically centres the tooltip on the highlight, clamped to screen. */
     fun clampedCenterY() = (hCenterY - tooltipHeightPx / 2f)
-        .coerceIn(marginPx, screenHeightPx - tooltipHeightPx - marginPx)
+        .coerceIn(marginPx, screenHeightPx)
 
     /** Tip fraction when the tooltip sits left or right of the highlight (vertical edge). */
     fun vTipFraction(tooltipY: Float) = ((hCenterY - tooltipY) / tooltipHeightPx).coerceIn(0f, 1f)
@@ -115,7 +116,7 @@ fun computeTooltipLayout(
         // Above — tooltip ABOVE the highlight, tip on its bottom edge
         {
             val x = clampedCenterX()
-            val y = hTop - highlightGapPx - tooltipHeightPx - marginPx
+            val y = hTop - highlightGapPx - tooltipHeightPx - marginPx - apexY
             if (y >= marginPx)
                 TooltipLayout(Offset(x, y), TooltipPlacement.Above, hTipFraction(x))
             else null
@@ -147,7 +148,7 @@ fun computeTooltipLayout(
     val result = candidates.firstNotNullOfOrNull { it() } ?: run {
         val x = clampedCenterX()
         val y = (hTop - highlightGapPx - tooltipHeightPx).coerceAtLeast(marginPx)
-        TooltipLayout(Offset(x, y), TooltipPlacement.Above, hTipFraction(x))
+        TooltipLayout(Offset(x, y), TooltipPlacement.End, hTipFraction(x))
     }
     println("--- TOOLTIP LAYOUT RESULT --- placement=${result.placement}, offset=${result.offset}, tipFraction=${result.tipEdgeFraction}")
     return result

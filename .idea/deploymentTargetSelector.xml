@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-04-14T13:03:54.581637532Z">
+        <DropdownSelection timestamp="2026-04-14T15:02:27.926139393Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=HA1NBBSD" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY22M946DQ" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -27,7 +27,7 @@
       </SelectionState>
       <SelectionState runConfigName="TaskManagerScreenPreviewAddButton">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-04-14T14:04:20.373196913Z">
+        <DropdownSelection timestamp="2026-04-14T14:11:57.127259331Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY22M946DQ" />

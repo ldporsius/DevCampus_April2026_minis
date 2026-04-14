@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +51,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
@@ -174,7 +178,7 @@ fun TaskManagerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
                 ,
             ) {
                 // Filter tabs
@@ -349,45 +353,54 @@ private fun TourOverlay(
     onAction: (TourAction) -> Unit,
 ) {
     val scrimColor = MaterialTheme.colorScheme.scrim
+    val highlightPadding = 80.dp
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()
-    ) {
-        val density = LocalDensity.current
-        val highlightPadding = 8.dp
-
-        androidx.compose.foundation.Canvas(
-            modifier = Modifier
-                .size(maxWidth, maxHeight)
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
-        ) {
+    BoxWithConstraints(modifier = Modifier
+        .fillMaxSize()
+        .drawWithContent(){
             drawRect(scrimColor)
+
             if (rootBounds != null && highlightBounds != null) {
                 drawHighlightCutout(highlightPadding, rootBounds, highlightBounds)
             }
+            drawContent()
         }
+        
+    ) {
+        val density = LocalDensity.current
+
+       /* androidx.compose.foundation.Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
+        ) {
+
+        }*/
 
         if (rootBounds != null && highlightBounds != null) {
             val tooltipWidthPx  = with(density) { 240.dp.toPx() }
             val tooltipHeightPx = with(density) { 140.dp.toPx() }
 
             val navBarPx = WindowInsets.navigationBars.getBottom(density).toFloat()
+            val sysBarPx = WindowInsets.systemBars.getTop(density).toFloat()
+
             val tipLength = with(density) { 16.dp.toPx() }
             val tipBase   = with(density) { 24.dp.toPx() }
             val cornerRadius = with(density) { 12.dp.toPx() }
 
-
-
             val layout = computeTooltipLayout(
                 screenWidthPx   = with(density) { maxWidth.toPx() },
-                screenHeightPx  = with(density) { maxHeight.toPx() },
+                screenHeightPx  = with(density) { maxHeight.toPx()},
                 hLeft           = highlightBounds.left - rootBounds.left,
-                hTop            = highlightBounds.top  - rootBounds.top,
+                hTop            = with(density){
+                    highlightBounds.top.toDp().toPx()  - rootBounds.top.toDp().toPx()
+                                               },
                 hWidth          = highlightBounds.width,
-                hHeight         = with(density){highlightBounds.height + highlightPadding.toPx()},
+                hHeight         = with(density){highlightBounds.height},
                 tooltipWidthPx  = tooltipWidthPx,
                 tooltipHeightPx = tooltipHeightPx ,
                 marginPx        = with(density) { 12.dp.toPx() },
-                highlightGapPx  = with(density) { 20.dp.toPx() },
+                highlightGapPx  = with(density) { highlightPadding.toPx() },
                 apexY           = tipLength,
             )
 
@@ -423,11 +436,12 @@ private fun DrawScope.drawHighlightCutout(
     val height = highlightBounds.height + padding * 2
 
     drawRoundRect(
-        color = Color.Transparent,
-        topLeft = androidx.compose.ui.geometry.Offset(left, top),
+        color = Color.White,
+        alpha = .5f,
+        topLeft = Offset(left, top),
         size = androidx.compose.ui.geometry.Size(width, height),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
-        blendMode = BlendMode.Clear,
+        //blendMode = BlendMode.Clear,
     )
 }
 
