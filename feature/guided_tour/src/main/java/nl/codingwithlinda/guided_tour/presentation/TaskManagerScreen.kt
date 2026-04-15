@@ -291,8 +291,13 @@ private fun StartTourDialog(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.15f))
-
-        ,
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent().changes.forEach { it.consume() }
+                    }
+                }
+            },
     ) {
         Card(
             shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
