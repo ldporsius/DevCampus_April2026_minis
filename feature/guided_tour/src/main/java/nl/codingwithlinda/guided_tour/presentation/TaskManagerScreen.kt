@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -57,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInParent
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.boundsInWindow
@@ -280,13 +282,16 @@ private fun StartTourDialog(
         LocalWindowInfo.current.containerSize.height.toDp()
     }
     val isCompactHeight = containerHeight < 480.dp
-    val sizeModifier = if (isCompactHeight) Modifier.fillMaxSize() else Modifier.fillMaxWidth()
+    val sizeModifier = if (isCompactHeight) Modifier
+        .fillMaxSize() else Modifier
+            .widthIn(max = 600.dp)
 
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.15f))
+
         ,
     ) {
         Card(
@@ -298,17 +303,20 @@ private fun StartTourDialog(
             Column(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Take a quick tour",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     text = "Learn how to manage your tasks in just a few steps",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp,
+                    textAlign = TextAlign.Center
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),

@@ -8,7 +8,7 @@ val TmSurface        = Color(0xFFFFFFFF)
 val TmSurfaceVariant = Color(0xFFEEEEEE)
 
 // Primary — mid gray
-val TmPrimary             = Color(0xFF757575)
+val TmPrimary             = Color(0xFF101828)
 val TmOnPrimary           = Color(0xFFFFFFFF)
 val TmPrimaryContainer    = Color(0xFFE0E0E0)
 val TmOnPrimaryContainer  = Color(0xFF212121)
