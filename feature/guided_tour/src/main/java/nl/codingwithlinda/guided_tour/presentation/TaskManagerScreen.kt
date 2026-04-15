@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -37,7 +36,6 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -77,6 +75,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.codingwithlinda.guided_tour.presentation.design_system.SpeechBubbleShape
+import nl.codingwithlinda.guided_tour.presentation.design_system.components.TmButton
+import nl.codingwithlinda.guided_tour.presentation.design_system.components.TmOutlinedButton
 import nl.codingwithlinda.guided_tour.presentation.design_system.theme.TaskManagerTheme
 import org.koin.androidx.compose.koinViewModel
 
@@ -315,7 +315,7 @@ private fun StartTourDialog(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    OutlinedButton(
+                    TmOutlinedButton(
                         onClick = onSkip,
                         modifier = Modifier.weight(1f)
                     ) {
@@ -325,7 +325,7 @@ private fun StartTourDialog(
                         )
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(
+                    TmButton(
                         onClick = onStartTour,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -496,7 +496,7 @@ private fun TourTooltip(
                         contentColor = MaterialTheme.colorScheme.onBackground,
                     )
                 }
-                OutlinedButton(
+                TmOutlinedButton(
                     onClick = {
                         onAction(if (step.isLast) TourAction.Finish else TourAction.NextStep)
                     },
