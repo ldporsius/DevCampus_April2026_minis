@@ -376,8 +376,8 @@ private fun TourOverlay(
             val tooltipWidthPx  = with(density) { 280.dp.toPx() }
 
 
-            val tipLength = with(density) { 16.dp.toPx() }
-            val tipBase   = with(density) { 24.dp.toPx() }
+            val tipLength = with(density) { 8.dp.toPx() }
+            val tipBase   = with(density) { 16.dp.toPx() }
             val cornerRadius = with(density) { 12.dp.toPx() }
 
             val layout = computeTooltipLayout(
