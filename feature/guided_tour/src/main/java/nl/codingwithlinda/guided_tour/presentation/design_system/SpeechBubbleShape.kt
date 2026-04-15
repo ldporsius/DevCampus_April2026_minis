@@ -95,7 +95,6 @@ private fun bottomTipPath(
     lineTo(size.width, rectBottom - r)
     quadraticTo(size.width, rectBottom, tipRight, rectBottom)
 
-    //lineTo(tipRight, rectBottom)
     // Right foot → apex
     quadraticTo(tipCenterX , rectBottom, tipCenterX, apexY)
     // Apex → left foot
@@ -159,8 +158,6 @@ private fun tipPointLeftPath(
     tipCenterY: Float,
     tipAtStart: Boolean,
 ): Path = Path().apply {
-    // Rectangle occupies full height; tip reserves [tipLength] on one horizontal side.
-    val rectLeft  = if (tipAtStart) tipLength else 0f
     val rectRight = if (tipAtStart) size.width else size.width
     addRoundRect(RoundRect(left = 0f, top = 0f, right = rectRight, bottom = size.height, cornerRadius = CornerRadius(50f, 50f)))
 
@@ -182,32 +179,26 @@ private fun tipPointRightPath(
     cornerRadius: Float,
 ): Path = Path().apply {
     val r = cornerRadius
-    val tipTop    = tipCenterY - tipBase / 2f
-    val tipBottom   = tipCenterY + tipBase / 2f
+    val halfTipBase = tipBase / 2f
+    val clampedTipCenterY = tipCenterY.coerceIn(r+halfTipBase, size.height - r - halfTipBase)
+
+    val tipTop    = (clampedTipCenterY - tipBase / 2f)
+    val tipBottom = (clampedTipCenterY + tipBase / 2f)
 
     moveTo(0f, r)
-    //top-left corner
+    // top-left corner
     quadraticTo(0f, 0f, r, 0f)
     lineTo(size.width - r, 0f)
-    //top-right corner
-    quadraticTo(size.width, 0f, size.width, r)
+    quadraticTo(size.width , 0f, size.width, r)
     lineTo(size.width, tipTop)
 
-    //apex
-    lineTo(size.width + tipLength, tipCenterY )
-    lineTo(size.width , tipBottom )
-//    quadraticTo(size.width, 0f, size.width + tipLength, tipCenterY)
-//    // Apex → right foot
-//    quadraticTo(size.width, 0f, size.width + tipLength, tipCenterY)
-
-
-    lineTo(size.width,size.height -r )
-
-    // bottom-right corner
-    quadraticTo(size.width , size.height, size.width - r, size.height)
+    lineTo(size.width+tipLength, clampedTipCenterY)
+    lineTo(size.width, tipBottom)
+    lineTo(size.width, size.height-r)
+    quadraticTo(size.width, size.height, size.width-r, size.height)
 
     lineTo(r, size.height)
-    //bottom-left corner
+    // bottom-left corner
     quadraticTo(0f, size.height, 0f, size.height - r)
     lineTo(0f, r)
 
