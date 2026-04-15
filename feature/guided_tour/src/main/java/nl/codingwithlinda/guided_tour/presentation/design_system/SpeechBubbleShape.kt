@@ -180,7 +180,7 @@ private fun tipPointLeftPath(
     close()
 }
 
-/** Card rect + tip pointing right from the rect. */
+/** Card rect + tip pointing right from the right edge. */
 private fun tipPointRightPath(
     size: Size,
     tipLength: Float,

@@ -106,7 +106,7 @@ fun computeTooltipLayout(
         // Below — tooltip BELOW the highlight, tip on its top edge
         {
             val x = clampedCenterX()
-            val y = hBottom + highlightGapPx + apexY
+            val y = hBottom + highlightGapPx + apexY + marginPx
             if (y + tooltipHeightPx <= screenHeightPx - marginPx)
                 TooltipLayout(Offset(x, y), TooltipPlacement.Below, hTipFraction(x))
             else null
@@ -137,18 +137,10 @@ fun computeTooltipLayout(
     // First candidate whose constrained axis fits wins.
     // Fallback: Above, clamped — only reached when every side has less space than
     // the tooltip needs (e.g. a very small screen or an unusually large tooltip).
-
-    println("--- TOOLTIP LAYOUT --- clampedCenterX() = ${clampedCenterX()}, clampedCenterY() = ${clampedCenterY()}, hCenterX = $hCenterX, hCenterY = $hCenterY")
-    println("--- TOOLTIP LAYOUT --- hLeft = $hLeft, hTop = $hTop, hWidth = $hWidth, hHeight = $hHeight")
-    println("--- TOOLTIP LAYOUT --- tooltipWidthPx = $tooltipWidthPx, tooltipHeightPx = $tooltipHeightPx")
-    println("--- TOOLTIP LAYOUT --- marginPx = $marginPx, highlightGapPx = $highlightGapPx, screenWidthPx = $screenWidthPx, screenHeightPx = $screenHeightPx")
-    println("--- TOOLTIP LAYOUT --- hTipFraction(x) = ${hTipFraction(clampedCenterX())}, vTipFraction(y) = ${vTipFraction(clampedCenterY())}")
-
     val result = candidates.firstNotNullOfOrNull { it() } ?: run {
         val x = clampedCenterX()
         val y = (hTop - highlightGapPx - tooltipHeightPx).coerceAtLeast(marginPx)
         TooltipLayout(Offset(x, y), TooltipPlacement.End, hTipFraction(x))
     }
-    println("--- TOOLTIP LAYOUT RESULT --- placement=${result.placement}, offset=${result.offset}, tipFraction=${result.tipEdgeFraction}")
     return result
 }

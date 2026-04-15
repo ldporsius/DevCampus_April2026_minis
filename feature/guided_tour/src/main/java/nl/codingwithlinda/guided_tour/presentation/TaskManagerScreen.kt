@@ -119,7 +119,6 @@ fun TaskManagerScreen(
             .fillMaxSize()
             .onGloballyPositioned {
                 rootBounds = it.boundsInRoot()
-                println("--- TASK MANAGER SCREEN --- ROOT BOUNDS 1 --- $rootBounds")
             }
         ,
     ) {
