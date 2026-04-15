@@ -52,8 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
@@ -76,6 +74,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import nl.codingwithlinda.guided_tour.presentation.design_system.SpeechBubbleShape
 import nl.codingwithlinda.guided_tour.presentation.design_system.theme.TaskManagerTheme
@@ -178,7 +177,7 @@ fun TaskManagerScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .consumeWindowInsets(innerPadding)
+                    .padding(innerPadding)
                 ,
             ) {
                 // Filter tabs
@@ -206,7 +205,6 @@ fun TaskManagerScreen(
                 // Task list area
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
                         .padding(16.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.surface)
@@ -214,7 +212,7 @@ fun TaskManagerScreen(
                     contentAlignment = Alignment.TopCenter,
                 ) {
                     Column(
-                        modifier = Modifier
+                        modifier = Modifier.fillMaxWidth()
                             .onGloballyPositioned { coords ->
                                 taskListBounds = coords.boundsInRoot()
                             },
@@ -353,36 +351,31 @@ private fun TourOverlay(
     onAction: (TourAction) -> Unit,
 ) {
     val scrimColor = MaterialTheme.colorScheme.scrim
-    val highlightPadding = 80.dp
 
     BoxWithConstraints(modifier = Modifier
         .fillMaxSize()
-        .drawWithContent(){
-            drawRect(scrimColor)
-
-            if (rootBounds != null && highlightBounds != null) {
-                drawHighlightCutout(highlightPadding, rootBounds, highlightBounds)
-            }
-            drawContent()
-        }
-        
     ) {
         val density = LocalDensity.current
+        val highlightPadding = 8.dp
 
-       /* androidx.compose.foundation.Canvas(
+        androidx.compose.foundation.Canvas(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen },
         ) {
+            drawRect(scrimColor)
+            if (rootBounds != null && highlightBounds != null) {
+                drawHighlightCutout(highlightPadding, rootBounds, highlightBounds)
+            }
+        }
 
-        }*/
+        var tooltipHeightPx by remember { mutableStateOf(0f) }
+
 
         if (rootBounds != null && highlightBounds != null) {
             val tooltipWidthPx  = with(density) { 240.dp.toPx() }
-            val tooltipHeightPx = with(density) { 140.dp.toPx() }
+            //val tooltipHeightPx = with(density) { 140.dp.toPx() }
 
-            val navBarPx = WindowInsets.navigationBars.getBottom(density).toFloat()
-            val sysBarPx = WindowInsets.systemBars.getTop(density).toFloat()
 
             val tipLength = with(density) { 16.dp.toPx() }
             val tipBase   = with(density) { 24.dp.toPx() }
@@ -408,6 +401,9 @@ private fun TourOverlay(
                 modifier = Modifier
                     .offset { IntOffset(layout.offset.x.toInt(), layout.offset.y.toInt()) }
                     .width(with(density) { tooltipWidthPx.toDp()})
+                    .onPlaced(){
+                        tooltipHeightPx = it.size.toSize().height
+                    }
 
             ) {
                 TourTooltip(
@@ -436,12 +432,11 @@ private fun DrawScope.drawHighlightCutout(
     val height = highlightBounds.height + padding * 2
 
     drawRoundRect(
-        color = Color.White,
-        alpha = .5f,
+        color = Color.Transparent,
         topLeft = Offset(left, top),
         size = androidx.compose.ui.geometry.Size(width, height),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
-        //blendMode = BlendMode.Clear,
+        blendMode = BlendMode.Clear,
     )
 }
 

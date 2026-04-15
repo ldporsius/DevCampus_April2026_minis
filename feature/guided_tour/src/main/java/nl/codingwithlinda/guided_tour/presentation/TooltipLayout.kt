@@ -58,7 +58,6 @@ fun computeTooltipLayout(
     tooltipHeightPx: Float,
     marginPx: Float,
     highlightGapPx: Float,
-    //highlightArea: Float,
     apexY: Float,
 ): TooltipLayout {
     val hRight   = hLeft  + hWidth
@@ -107,7 +106,7 @@ fun computeTooltipLayout(
         // Below — tooltip BELOW the highlight, tip on its top edge
         {
             val x = clampedCenterX()
-            val y = hBottom + highlightGapPx
+            val y = hBottom + highlightGapPx + apexY
             if (y + tooltipHeightPx <= screenHeightPx - marginPx)
                 TooltipLayout(Offset(x, y), TooltipPlacement.Below, hTipFraction(x))
             else null
