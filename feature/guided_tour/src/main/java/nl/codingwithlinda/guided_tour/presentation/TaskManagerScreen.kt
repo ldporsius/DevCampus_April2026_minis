@@ -373,8 +373,7 @@ private fun TourOverlay(
 
 
         if (rootBounds != null && highlightBounds != null) {
-            val tooltipWidthPx  = with(density) { 240.dp.toPx() }
-            //val tooltipHeightPx = with(density) { 140.dp.toPx() }
+            val tooltipWidthPx  = with(density) { 280.dp.toPx() }
 
 
             val tipLength = with(density) { 16.dp.toPx() }
@@ -481,7 +480,7 @@ private fun TourTooltip(
                 text = step.description,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Normal,
+                fontWeight = FontWeight.Bold,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -497,7 +496,7 @@ private fun TourTooltip(
                         contentColor = MaterialTheme.colorScheme.onBackground,
                     )
                 }
-                Button(
+                OutlinedButton(
                     onClick = {
                         onAction(if (step.isLast) TourAction.Finish else TourAction.NextStep)
                     },
