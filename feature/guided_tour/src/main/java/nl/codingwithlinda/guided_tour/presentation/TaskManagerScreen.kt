@@ -143,14 +143,15 @@ fun TaskManagerScreen(
                     actions = {
                         IconButton(
                             onClick = {},
-                            modifier = Modifier.onGloballyPositioned { coords ->
-                                searchBounds = coords.boundsInRoot()
-                            },
+
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
                                 tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.onGloballyPositioned { coords ->
+                                    searchBounds = coords.boundsInRoot()
+                                },
                             )
                         }
                     },
@@ -368,6 +369,7 @@ private fun TourOverlay(
     ) {
         val density = LocalDensity.current
         val highlightPadding = 8.dp
+        val highlightEdgeMargin = 12.dp
 
         androidx.compose.foundation.Canvas(
             modifier = Modifier
@@ -376,7 +378,7 @@ private fun TourOverlay(
         ) {
             drawRect(scrimColor)
             if (rootBounds != null && highlightBounds != null) {
-                drawHighlightCutout(highlightPadding, rootBounds, highlightBounds)
+                drawHighlightCutout(highlightPadding, highlightEdgeMargin, rootBounds, highlightBounds)
             }
         }
 
@@ -432,19 +434,41 @@ private fun TourOverlay(
 
 private fun DrawScope.drawHighlightCutout(
     padding: Dp,
+    edgeMargin: Dp,
     rootBounds: Rect,
     highlightBounds: Rect,
 ) {
-    val padding = padding.toPx()
-    val left   = highlightBounds.left  - rootBounds.left - padding
-    val top    = highlightBounds.top   - rootBounds.top  - padding
-    val width  = highlightBounds.width  + padding * 2
-    val height = highlightBounds.height + padding * 2
+    val paddingPx = padding.toPx()
+    val edgeMarginPx = edgeMargin.toPx()
+
+    // Only apply the edge margin on an axis where the highlight is already
+    // centered on the root — clamping asymmetrically would shift the cutout
+    // off the target, and keeping it centered matters more than the margin.
+    val centeredX = kotlin.math.abs(highlightBounds.center.x - rootBounds.center.x) < 0.5f
+    val centeredY = kotlin.math.abs(highlightBounds.center.y - rootBounds.center.y) < 0.5f
+
+    val leftAbs = if (centeredX)
+        (highlightBounds.left - paddingPx).coerceAtLeast(rootBounds.left + edgeMarginPx)
+    else highlightBounds.left - paddingPx
+    val rightAbs = if (centeredX)
+        (highlightBounds.right + paddingPx).coerceAtMost(rootBounds.right - edgeMarginPx)
+    else highlightBounds.right + paddingPx
+
+    val topAbs = if (centeredY)
+        (highlightBounds.top - paddingPx).coerceAtLeast(rootBounds.top + edgeMarginPx)
+    else highlightBounds.top - paddingPx
+    val bottomAbs = if (centeredY)
+        (highlightBounds.bottom + paddingPx).coerceAtMost(rootBounds.bottom - edgeMarginPx)
+    else highlightBounds.bottom + paddingPx
+
+    val left = leftAbs - rootBounds.left
+    val top  = topAbs  - rootBounds.top
+
 
     drawRoundRect(
         color = Color.Transparent,
         topLeft = Offset(left, top),
-        size = androidx.compose.ui.geometry.Size(width, height),
+        size = androidx.compose.ui.geometry.Size(rightAbs - leftAbs, bottomAbs - topAbs),
         cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx()),
         blendMode = BlendMode.Clear,
     )
