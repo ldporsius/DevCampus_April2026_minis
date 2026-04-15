@@ -156,7 +156,7 @@ fun TaskManagerScreen(
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        containerColor = MaterialTheme.colorScheme.surface,
                     ),
                 )
             },
@@ -208,8 +208,7 @@ fun TaskManagerScreen(
                 Box(
                     modifier = Modifier
                         .padding(16.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surface)
+
                     ,
                     contentAlignment = Alignment.TopCenter,
                 ) {
